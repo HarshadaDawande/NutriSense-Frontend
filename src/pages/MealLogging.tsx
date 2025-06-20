@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
@@ -42,16 +42,7 @@ export function MealLogging({ meals, onAddMeal, onDeleteMeal, onBack, isFirstTim
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedMealTypeFilter, setSelectedMealTypeFilter] = useState<MealType | 'all'>('all');
 
-  // Auto-analyze meal when description changes
-  useEffect(() => {
-    if (selectedMeal.description && selectedMeal.source === 'manual' && !selectedMeal.isAnalyzing) {
-      const timeoutId = setTimeout(() => {
-        analyzeMeal();
-      }, 1000); // Debounce for 1 second
-
-      return () => clearTimeout(timeoutId);
-    }
-  }, [selectedMeal.description]);
+  // Removed auto-analyze debounce in favor of a button
 
   // Mock AI analysis function
   const analyzeMeal = async () => {
@@ -355,27 +346,32 @@ export function MealLogging({ meals, onAddMeal, onDeleteMeal, onBack, isFirstTim
                           <strong>Pro tip:</strong> The more specific you are with quantities and cooking methods, the more accurate our AI macro calculations will be!
                         </div>
                       </div>
-                    </div>
-
-                    {/* Auto Analysis Status */}
-                    {selectedMeal.description && (
-                      <div className="flex items-center gap-2 p-3 bg-yellow-50 rounded-lg border border-yellow-200">
+                      
+                      {/* Calculate Macros Button */}
+                      <Button 
+                        type="button" 
+                        onClick={analyzeMeal} 
+                        disabled={!selectedMeal.description || selectedMeal.isAnalyzing}
+                        className="w-full bg-green-600 hover:bg-green-700 text-white flex items-center justify-center gap-2 py-2">
                         {selectedMeal.isAnalyzing ? (
                           <>
-                            <div className="w-4 h-4 border-2 border-yellow-500 border-t-transparent rounded-full animate-spin" />
-                            <span className="text-sm text-yellow-700">Our AI is analyzing your meal...</span>
-                          </>
-                        ) : selectedMeal.macros ? (
-                          <>
-                            <CheckCircle className="w-4 h-4 text-green-600" />
-                            <span className="text-sm text-green-700">Analysis complete!</span>
+                            <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                            Analyzing...
                           </>
                         ) : (
                           <>
-                            <Clock className="w-4 h-4 text-yellow-600" />
-                            <span className="text-sm text-yellow-700">AI will analyze your meal in a moment...</span>
+                            <Zap className="w-4 h-4" />
+                            Calculate Macros
                           </>
                         )}
+                      </Button>
+                    </div>
+
+                    {/* Analysis Status */}
+                    {selectedMeal.macros && (
+                      <div className="flex items-center gap-2 p-3 bg-green-50 rounded-lg border border-green-200 mt-4">
+                        <CheckCircle className="w-4 h-4 text-green-600" />
+                        <span className="text-sm text-green-700">Analysis complete!</span>
                       </div>
                     )}
                   </CardContent>
