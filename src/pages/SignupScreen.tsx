@@ -5,7 +5,7 @@ import { Input } from '../components/ui/input';
 import { Label } from '../components/ui/label';
 import { ArrowLeft, UserPlus, Eye, EyeOff, Leaf, Apple, Target, Zap } from 'lucide-react';
 import { ImageWithFallback } from '../components/figma/ImageWithFallback';
-
+import axios from 'axios';
 interface SignupScreenProps {
   onSignUp: () => void;
   onBackToLogin: () => void;
@@ -18,21 +18,27 @@ export function SignupScreen({ onSignUp, onBackToLogin }: SignupScreenProps) {
     password: '',
     confirmPassword: ''
   });
+  const [errMessage, setErrMessage] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-
+  const doSignup = async () => {
+    try{
+      const response = await axios.post('http://localhost:8080/v1/signup', formData);
+      console.log(response.data);
+    } catch (error) {
+      setErrMessage("User already exists !");
+      console.error('Error saving food macros:', error);
+    }
+  }
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (formData.password !== formData.confirmPassword) {
-      alert('Passwords do not match');
-      return;
-    }
-    if (formData.name && formData.email && formData.password) {
+    if (formData.name && formData.email) {
       setIsLoading(true);
       // Simulate signup process
       await new Promise(resolve => setTimeout(resolve, 1000));
       onSignUp();
+      await doSignup();
       setIsLoading(false);
     }
   };
@@ -45,7 +51,7 @@ export function SignupScreen({ onSignUp, onBackToLogin }: SignupScreenProps) {
     <div className="min-h-screen relative">
       {/* Background */}
       <div className="absolute inset-0 bg-gradient-to-br from-green-50 via-white to-green-100" />
-      
+
       {/* Background Images */}
       <div className="absolute top-10 right-10 w-40 h-40 opacity-8 hidden lg:block">
         <ImageWithFallback
@@ -61,7 +67,7 @@ export function SignupScreen({ onSignUp, onBackToLogin }: SignupScreenProps) {
           className="w-full h-full object-cover rounded-full"
         />
       </div>
-      
+
       <div className="relative z-10 flex items-center justify-center min-h-screen p-4">
         <div className="w-full max-w-md space-y-6">
           {/* Header */}
@@ -125,6 +131,7 @@ export function SignupScreen({ onSignUp, onBackToLogin }: SignupScreenProps) {
             </CardHeader>
             <CardContent>
               <form onSubmit={handleSubmit} className="space-y-4">
+                <div className="space-y-2" style={{color : "red"}}>{errMessage}</div>
                 <div className="space-y-2">
                   <Label htmlFor="name" className="text-gray-700">Full Name</Label>
                   <Input
@@ -150,7 +157,7 @@ export function SignupScreen({ onSignUp, onBackToLogin }: SignupScreenProps) {
                     required
                   />
                 </div>
-                
+
                 <div className="space-y-2">
                   <Label htmlFor="password" className="text-gray-700">Password</Label>
                   <div className="relative">
@@ -161,7 +168,6 @@ export function SignupScreen({ onSignUp, onBackToLogin }: SignupScreenProps) {
                       onChange={(e) => handleInputChange('password', e.target.value)}
                       placeholder="Create a password"
                       className="border-green-200 focus:border-green-500 focus:ring-green-500/20 pr-10"
-                      required
                     />
                     <Button
                       type="button"
@@ -189,7 +195,6 @@ export function SignupScreen({ onSignUp, onBackToLogin }: SignupScreenProps) {
                       onChange={(e) => handleInputChange('confirmPassword', e.target.value)}
                       placeholder="Confirm your password"
                       className="border-green-200 focus:border-green-500 focus:ring-green-500/20 pr-10"
-                      required
                     />
                     <Button
                       type="button"
