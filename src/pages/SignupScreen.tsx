@@ -25,6 +25,8 @@ export function SignupScreen({ onSignUp, onBackToLogin }: SignupScreenProps) {
   const doSignup = async () => {
     try{
       const response = await axios.post('http://localhost:8080/v1/signup', formData);
+      localStorage.setItem("name", formData.name);
+      localStorage.setItem("email", formData.email);
       console.log(response.data);
     } catch (error) {
       setErrMessage("User already exists !");
