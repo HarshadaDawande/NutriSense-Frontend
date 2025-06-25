@@ -40,7 +40,7 @@ export default function App() {
   const handleTargetsSave = (targets: MacroTargets) => {
     setMacroTargets(targets);
     setHasSetTargets(true);
-    
+
     if (isFirstTimeUser) {
       // For first-time users, go to meal logging after setting targets
       setCurrentScreen('meals');
@@ -56,6 +56,7 @@ export default function App() {
   };
 
   const handleLogout = () => {
+    localStorage.removeItem('userData');
     setUserEmail('');
     setIsFirstTimeUser(true);
     setHasSetTargets(false);
@@ -66,10 +67,13 @@ export default function App() {
   const currentMacros = calculateMacroTotals(meals);
 
   const renderScreen = () => {
+    console.log('currentScreen in App.tsx:', currentScreen);
+    console.log('isFirstTimeUser in App.tsx:', isFirstTimeUser);
     switch (currentScreen) {
       case 'welcome':
+        localStorage.removeItem('userData');
         return (
-          <WelcomeScreen 
+          <WelcomeScreen
             onLogin={() => setCurrentScreen('login')}
             onSignUp={() => setCurrentScreen('signup')}
           />
@@ -85,7 +89,9 @@ export default function App() {
                   const userData = JSON.parse(userDataStr);
                   setUserEmail(userData.emailAddress);
                   setUserName(userData.userName);
-                  setCurrentScreen('dashboard');
+                  setIsFirstTimeUser(userData.isFirstTimeUser === 'true');
+                  (isFirstTimeUser) ?
+                      setCurrentScreen('targets') : setCurrentScreen('dashboard');
                 } catch (error) {
                   console.error('Error parsing user data from localStorage:', error);
                 }
@@ -97,7 +103,7 @@ export default function App() {
         );
       case 'signup':
         return (
-          <SignupScreen 
+          <SignupScreen
             onBackToLogin={() => setCurrentScreen('login')}
             onBackToWelcome={() => setCurrentScreen('welcome')}
           />
@@ -115,6 +121,7 @@ export default function App() {
           />
         );
       case 'targets':
+        console.log('--> Rendering MacroTargetsComponent with targets:', isFirstTimeUser, hasSetTargets);
         return (
           <MacroTargetsComponent
             targets={macroTargets}
@@ -136,7 +143,7 @@ export default function App() {
         );
       default:
         return (
-          <WelcomeScreen 
+          <WelcomeScreen
             onLogin={() => setCurrentScreen('login')}
             onSignUp={() => setCurrentScreen('signup')}
           />

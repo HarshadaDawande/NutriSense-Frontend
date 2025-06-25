@@ -15,6 +15,7 @@ export function SignupScreen({ onBackToLogin, onBackToWelcome }: SignupScreenPro
   const [formData, setFormData] = useState({
     userName: '',
     emailAddress: '',
+    isFirstTimeUser: 'true',
     password: '',
     confirmPassword: ''
   });
@@ -32,7 +33,7 @@ export function SignupScreen({ onBackToLogin, onBackToWelcome }: SignupScreenPro
         if (error.response.status === 409) {
           setErrMessage("User already exists! Email address is already registered.");
         } else {
-          setErrMessage(`Error: ${error.response.data?.message || 'Something went wrong'}`); 
+          setErrMessage(`Error: ${error.response.data?.message || 'Something went wrong'}`);
         }
       } else {
         setErrMessage("An unexpected error occurred");

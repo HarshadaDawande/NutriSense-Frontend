@@ -17,6 +17,7 @@ interface LoginScreenProps {
 type UserData = {
   userName: string;
   emailAddress: string;
+  isFirstTimeUser: boolean;
   createdAt: string;
 }
 
@@ -53,13 +54,13 @@ export function LoginScreen({ onLogin, onBack, onSignUp }: LoginScreenProps) {
       setErrMessage(""); // Clear any previous error messages
       try {
         const userData = await doLogin();
-        
+
         // Store user data in local storage
         localStorage.setItem('userData', JSON.stringify(userData));
-        
+
         // Call onLogin to update state in parent component
         onLogin(email, password);
-        
+
         // Let the parent component handle navigation
       } catch (error) {
         // Error is already handled in doLogin
@@ -74,7 +75,7 @@ export function LoginScreen({ onLogin, onBack, onSignUp }: LoginScreenProps) {
     <div className="min-h-screen relative">
       {/* Background */}
       <div className="absolute inset-0 bg-gradient-to-br from-green-50 via-white to-green-100" />
-      
+
       {/* Background Images */}
       <div className="absolute top-10 right-10 w-32 h-32 opacity-10 hidden md:block">
         <ImageWithFallback
@@ -90,7 +91,7 @@ export function LoginScreen({ onLogin, onBack, onSignUp }: LoginScreenProps) {
           className="w-full h-full object-cover rounded-full"
         />
       </div>
-      
+
       <div className="relative z-10 flex items-center justify-center min-h-screen p-4">
         <div className="w-full max-w-md space-y-6">
           {/* Header */}
@@ -143,7 +144,7 @@ export function LoginScreen({ onLogin, onBack, onSignUp }: LoginScreenProps) {
                     required
                   />
                 </div>
-                
+
                 <div className="space-y-2">
                   <Label htmlFor="password" className="text-gray-700">Password</Label>
                   <div className="relative">
