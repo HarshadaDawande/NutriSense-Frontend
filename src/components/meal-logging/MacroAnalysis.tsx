@@ -1,6 +1,6 @@
 import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/card';
 import { Button } from '../../components/ui/button';
-import { Zap, Plus, CheckCircle } from 'lucide-react';
+import { Zap, Plus } from 'lucide-react';
 
 interface MacroAnalysisProps {
   macros: {

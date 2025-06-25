@@ -24,3 +24,8 @@ export interface Meal {
   macros: MacroEntry;
   timestamp: Date;
 } 
+
+export interface Params {
+  initialDate?: Date;
+  [key: string]: any;
+}

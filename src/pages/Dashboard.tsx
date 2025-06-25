@@ -5,19 +5,18 @@ import { Progress } from '../components/ui/progress';
 import { PieChart, Pie, Cell, ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip } from 'recharts';
 import { Target, Plus, Clock, LogOut, Scale, User, Leaf, Apple, ChevronLeft, ChevronRight, Calendar } from 'lucide-react';
 import { ImageWithFallback } from '../components/figma/ImageWithFallback';
-import type { MacroTargets, MacroEntry, Meal, Screen } from '../types';
+import type { MacroTargets, Meal, Screen, Params } from '../types';
 
 interface DashboardProps {
   targets: MacroTargets;
-  current: MacroEntry;
   meals: Meal[];
-  onNavigate: (screen: Screen) => void;
+  onNavigate: (screen: Screen, params?: Params) => void;
   onLogout?: () => void;
   userEmail?: string;
   userName?: string;
 }
 
-export function Dashboard({ targets, current, meals, onNavigate, onLogout, userEmail, userName }: DashboardProps) {
+export function Dashboard({ targets, meals, onNavigate, onLogout, userEmail, userName }: DashboardProps) {
   const [selectedDate, setSelectedDate] = useState(new Date());
 
   // Helper function to check if two dates are the same day
@@ -51,16 +50,16 @@ export function Dashboard({ targets, current, meals, onNavigate, onLogout, userE
   const isToday = isSameDay(selectedDate, new Date());
 
   // Helper function to get progress bar color
-  const getProgressColor = (current: number, target: number) => {
-    const percentage = (current / target) * 100;
-    if (percentage >= 100 && percentage <= 110) {
-      return 'bg-green-500'; // Achieved target (within 10% tolerance)
-    } else if (percentage > 110) {
-      return 'bg-red-500'; // Exceeded target significantly
-    } else {
-      return 'bg-gray-400'; // Not yet achieved
-    }
-  };
+  // const getProgressColor = (current: number, target: number) => {
+  //   const percentage = (current / target) * 100;
+  //   if (percentage >= 100 && percentage <= 110) {
+  //     return 'bg-green-500'; // Achieved target (within 10% tolerance)
+  //   } else if (percentage > 110) {
+  //     return 'bg-red-500'; // Exceeded target significantly
+  //   } else {
+  //     return 'bg-gray-400'; // Not yet achieved
+  //   }
+  // };
 
   // Get progress color indicator for the progress component
   const getProgressIndicatorColor = (current: number, target: number) => {
@@ -401,16 +400,14 @@ export function Dashboard({ targets, current, meals, onNavigate, onLogout, userE
                     {isToday ? 'Today\'s Meals' : `Meals for ${formatDate(selectedDate)}`} ({selectedDateMeals.length})
                   </span>
                 </div>
-                {isToday && (
-                  <Button
-                    onClick={() => onNavigate('meals')}
-                    size="sm"
-                    className="bg-green-500 hover:bg-green-600 text-white w-full sm:w-auto shadow-lg h-10 sm:h-9"
-                  >
-                    <Plus className="w-4 h-4 mr-2" />
-                    Add Meal
-                  </Button>
-                )}
+                <Button
+                  onClick={() => onNavigate('meals', { initialDate: selectedDate })}
+                  size="sm"
+                  className="bg-green-500 hover:bg-green-600 text-white w-full sm:w-auto shadow-lg h-10 sm:h-9"
+                >
+                  <Plus className="w-4 h-4 mr-2" />
+                  {isToday ? 'Add Meal' : `Add Meal for ${formatDate(selectedDate)}`}
+                </Button>
               </CardTitle>
             </CardHeader>
             <CardContent>

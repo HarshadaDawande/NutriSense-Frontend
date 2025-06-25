@@ -5,8 +5,8 @@ import { SignupScreen } from './pages/SignupScreen';
 import { Dashboard } from './pages/Dashboard';
 import { MacroTargets as MacroTargetsComponent } from './pages/MacroTargets';
 import { MealLogging } from './pages/MealLogging';
-import type { Screen, MacroTargets, Meal } from './types';
-import { calculateMacroTotals } from './utils';
+import type { Screen, MacroTargets, Meal, Params } from './types';
+//import { calculateMacroTotals } from './utils';
 
 // Types are now imported from './types'
 
@@ -23,12 +23,13 @@ export default function App() {
     fats: 65
   });
   const [meals, setMeals] = useState<Meal[]>([]);
+  const [navigationParams, setNavigationParams] = useState<Params | null>(null);
 
-  const addMeal = (meal: Omit<Meal, 'id' | 'timestamp'>) => {
+  const addMeal = (meal: Omit<Meal, 'id'> & { timestamp?: Date }) => {
     const newMeal: Meal = {
       ...meal,
       id: Date.now().toString(),
-      timestamp: new Date()
+      timestamp: meal.timestamp || new Date()
     };
     setMeals(prev => [...prev, newMeal]);
   };
@@ -50,6 +51,15 @@ export default function App() {
     }
   };
 
+  const handleNavigate = (screen: Screen, params?: Params) => {
+    setCurrentScreen(screen);
+    if (params) {
+      setNavigationParams(params);
+    } else {
+      setNavigationParams(null);
+    }
+  };
+
   const handleFirstMealComplete = () => {
     setIsFirstTimeUser(false);
     setCurrentScreen('dashboard');
@@ -63,7 +73,7 @@ export default function App() {
     setCurrentScreen('welcome');
   };
 
-  const currentMacros = calculateMacroTotals(meals);
+  //const currentMacros = calculateMacroTotals(meals);
 
   const renderScreen = () => {
     switch (currentScreen) {
@@ -106,9 +116,8 @@ export default function App() {
         return (
           <Dashboard
             targets={macroTargets}
-            current={currentMacros}
             meals={meals}
-            onNavigate={setCurrentScreen}
+            onNavigate={handleNavigate}
             onLogout={handleLogout}
             userEmail={userEmail}
             userName={userName}
@@ -125,13 +134,14 @@ export default function App() {
         );
       case 'meals':
         return (
-          <MealLogging
+          <MealLogging 
             meals={meals}
             onAddMeal={addMeal}
             onDeleteMeal={deleteMeal}
             onBack={() => setCurrentScreen('dashboard')}
             isFirstTime={isFirstTimeUser}
             onFirstMealComplete={handleFirstMealComplete}
+            initialDate={navigationParams?.initialDate}
           />
         );
       default:

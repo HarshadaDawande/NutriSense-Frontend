@@ -6,11 +6,12 @@ import { RegularMealLogging } from '../components/meal-logging/RegularMealLoggin
 
 interface MealLoggingProps {
   meals: Meal[];
-  onAddMeal: (meal: Omit<Meal, 'id' | 'timestamp'>) => void;
+  onAddMeal: (meal: Omit<Meal, 'id'> & { timestamp?: Date }) => void;
   onDeleteMeal: (mealId: string) => void;
   onBack: () => void;
   isFirstTime?: boolean;
   onFirstMealComplete?: () => void;
+  initialDate?: Date;
 }
 
 interface SelectedMeal {
@@ -27,13 +28,19 @@ interface SelectedMeal {
   isAnalyzing?: boolean;
 }
 
-export function MealLogging({ meals, onAddMeal, onDeleteMeal, onBack, isFirstTime = false, onFirstMealComplete }: MealLoggingProps) {
+export function MealLogging({ meals, onAddMeal, onDeleteMeal, onBack, isFirstTime = false, onFirstMealComplete, initialDate }: MealLoggingProps) {
   const [selectedMeal, setSelectedMeal] = useState<SelectedMeal>({
     name: '',
     description: '',
     type: '',
     source: 'manual'
   });
+  
+  const [selectedDate, setSelectedDate] = useState<Date>(initialDate || new Date());
+
+  const handleDateChange = (date: Date) => {
+    setSelectedDate(date);
+  };
 
   // Quick meal examples
   const quickMeals = [
@@ -121,7 +128,8 @@ export function MealLogging({ meals, onAddMeal, onDeleteMeal, onBack, isFirstTim
         name: selectedMeal.name,
         description: selectedMeal.description,
         type: selectedMeal.type as MealType,
-        macros: selectedMeal.macros
+        macros: selectedMeal.macros,
+        timestamp: selectedDate
       });
       
       // Reset form
@@ -215,6 +223,8 @@ export function MealLogging({ meals, onAddMeal, onDeleteMeal, onBack, isFirstTim
       onBack={onBack}
       onSubmit={handleSubmit}
       getStatusMessage={getStatusMessage}
+      selectedDate={selectedDate}
+      onDateChange={handleDateChange}
     />
   );
 }

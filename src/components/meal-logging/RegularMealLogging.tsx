@@ -5,6 +5,7 @@ import { MealForm } from './MealForm';
 import { MacroAnalysis } from './MacroAnalysis';
 import { MealLibrary } from './MealLibrary';
 import { QuickAddMeals } from './QuickAddMeals';
+import { DatePicker } from './DatePicker';
 import type { Meal, MealType } from '../../types';
 
 interface RegularMealLoggingProps {
@@ -43,6 +44,8 @@ interface RegularMealLoggingProps {
   onBack: () => void;
   onSubmit: (e: React.FormEvent) => void;
   getStatusMessage: () => string;
+  selectedDate: Date;
+  onDateChange: (date: Date) => void;
 }
 
 export function RegularMealLogging({
@@ -57,7 +60,9 @@ export function RegularMealLogging({
   onDeleteMeal,
   onBack,
   onSubmit,
-  getStatusMessage
+  getStatusMessage,
+  selectedDate,
+  onDateChange
 }: RegularMealLoggingProps) {
   const headerTitle = "Add Meal";
   const headerDescription = "Add a meal and get AI-powered macro analysis";
@@ -107,6 +112,14 @@ export function RegularMealLogging({
                     onMealChange={onMealChange}
                     onAnalyzeMeal={onAnalyzeMeal}
                   />
+                  
+                  {/* Date Picker */}
+                  <div className="bg-white/80 backdrop-blur-sm border border-green-200 shadow-lg rounded-lg p-4">
+                    <DatePicker 
+                      selectedDate={selectedDate} 
+                      onDateChange={onDateChange} 
+                    />
+                  </div>
 
                   {/* Analysis Results - Always show if available */}
                   {selectedMeal.macros && (
