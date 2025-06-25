@@ -174,7 +174,7 @@ export function SignupScreen({ onBackToLogin, onBackToWelcome }: SignupScreenPro
               <form onSubmit={handleSubmit} className="space-y-4">
                 <div className="space-y-2" style={{color : "red"}}>{errMessage}</div>
                 <div className="space-y-2">
-                  <Label htmlFor="userName" className="text-gray-700">Full Name</Label>
+                  <Label htmlFor="userName" className="text-gray-700">Username</Label>
                   <Input
                     id="userName"
                     type="text"

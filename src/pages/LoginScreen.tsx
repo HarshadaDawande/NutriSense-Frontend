@@ -1,9 +1,10 @@
 import { useState } from 'react';
+import axios from 'axios';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
 import { Label } from '../components/ui/label';
-import { ArrowLeft, LogIn, Eye, EyeOff, Leaf, Utensils } from 'lucide-react';
+import { ArrowLeft, LogIn, Eye, EyeOff, Utensils } from 'lucide-react';
 import { ImageWithFallback } from '../components/figma/ImageWithFallback';
 
 interface LoginScreenProps {
@@ -12,20 +13,60 @@ interface LoginScreenProps {
   onSignUp: () => void;
 }
 
+// User data structure from API
+type UserData = {
+  userName: string;
+  emailAddress: string;
+  createdAt: string;
+}
+
 export function LoginScreen({ onLogin, onBack, onSignUp }: LoginScreenProps) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [errMessage, setErrMessage] = useState('');
+
+  const doLogin = async (): Promise<UserData> => {
+    try {
+      const response = await axios.get(`http://localhost:8080/v1/user/${email}`);
+      return response.data;
+    } catch (error) {
+      if (axios.isAxiosError(error) && error.response) {
+        if (error.response.status === 404) {
+          setErrMessage("User not found. Please check your email or sign up.");
+        } else {
+          setErrMessage(`Error: ${error.response.data?.message || 'Something went wrong'}`);
+        }
+      } else {
+        setErrMessage("An unexpected error occurred");
+      }
+      console.error('Error during login:', error);
+      throw error; // Re-throw the error so it can be caught in handleSubmit
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (email && password) {
+    if (email) {
       setIsLoading(true);
-      // Simulate login process
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      onLogin(email, password);
-      setIsLoading(false);
+      setErrMessage(""); // Clear any previous error messages
+      try {
+        const userData = await doLogin();
+        
+        // Store user data in local storage
+        localStorage.setItem('userData', JSON.stringify(userData));
+        
+        // Call onLogin to update state in parent component
+        onLogin(email, password);
+        
+        // Let the parent component handle navigation
+      } catch (error) {
+        // Error is already handled in doLogin
+        console.error("Error in handleSubmit:", error);
+      } finally {
+        setIsLoading(false);
+      }
     }
   };
 
@@ -89,6 +130,7 @@ export function LoginScreen({ onLogin, onBack, onSignUp }: LoginScreenProps) {
             </CardHeader>
             <CardContent>
               <form onSubmit={handleSubmit} className="space-y-4">
+                <div className="space-y-2" style={{color : "red"}}>{errMessage}</div>
                 <div className="space-y-2">
                   <Label htmlFor="email" className="text-gray-700">Email</Label>
                   <Input
@@ -112,7 +154,7 @@ export function LoginScreen({ onLogin, onBack, onSignUp }: LoginScreenProps) {
                       onChange={(e) => setPassword(e.target.value)}
                       placeholder="Enter your password"
                       className="border-green-200 focus:border-green-500 focus:ring-green-500/20 pr-10"
-                      required
+                      disabled={true} // Temporarily disabled as per requirements
                     />
                     <Button
                       type="button"
@@ -148,21 +190,6 @@ export function LoginScreen({ onLogin, onBack, onSignUp }: LoginScreenProps) {
                   )}
                 </Button>
               </form>
-
-              {/* Demo Credentials */}
-              <div className="mt-6 p-4 bg-green-50 rounded-lg border border-green-200">
-                <div className="flex items-center gap-2 mb-2">
-                  <Leaf className="w-4 h-4 text-green-600" />
-                  <h4 className="font-medium text-green-700">Demo Credentials</h4>
-                </div>
-                <div className="text-sm text-gray-700 space-y-1">
-                  <p><strong>Email:</strong> demo@example.com</p>
-                  <p><strong>Password:</strong> demo123</p>
-                  <p className="text-xs mt-2 text-gray-600">
-                    You can use these credentials to test the app, or enter any email/password to continue.
-                  </p>
-                </div>
-              </div>
 
               {/* Sign Up Link */}
               <div className="mt-6 text-center">

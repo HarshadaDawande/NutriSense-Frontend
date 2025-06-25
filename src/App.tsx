@@ -15,6 +15,7 @@ export default function App() {
   const [isFirstTimeUser, setIsFirstTimeUser] = useState(true);
   const [hasSetTargets, setHasSetTargets] = useState(false);
   const [userEmail, setUserEmail] = useState('');
+  const [userName, setUserName] = useState('');
   const [macroTargets, setMacroTargets] = useState<MacroTargets>({
     calories: 2000,
     protein: 150,
@@ -76,7 +77,20 @@ export default function App() {
       case 'login':
         return (
           <LoginScreen
-            onLogin={() => setCurrentScreen('login')}
+            onLogin={(_, __) => {
+              // Check if user data is stored in localStorage
+              const userDataStr = localStorage.getItem('userData');
+              if (userDataStr) {
+                try {
+                  const userData = JSON.parse(userDataStr);
+                  setUserEmail(userData.emailAddress);
+                  setUserName(userData.userName);
+                  setCurrentScreen('dashboard');
+                } catch (error) {
+                  console.error('Error parsing user data from localStorage:', error);
+                }
+              }
+            }}
             onBack={() => setCurrentScreen('welcome')}
             onSignUp={() => setCurrentScreen('signup')}
           />
@@ -97,6 +111,7 @@ export default function App() {
             onNavigate={setCurrentScreen}
             onLogout={handleLogout}
             userEmail={userEmail}
+            userName={userName}
           />
         );
       case 'targets':
