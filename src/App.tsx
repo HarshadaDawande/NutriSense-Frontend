@@ -85,6 +85,7 @@ export default function App() {
         return (
           <SignupScreen 
             onBackToLogin={() => setCurrentScreen('login')}
+            onBackToWelcome={() => setCurrentScreen('welcome')}
           />
         );
       case 'dashboard':

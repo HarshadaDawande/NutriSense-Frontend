@@ -8,9 +8,10 @@ import { ImageWithFallback } from '../components/figma/ImageWithFallback';
 import axios from 'axios';
 interface SignupScreenProps {
   onBackToLogin: () => void;
+  onBackToWelcome: () => void;
 }
 
-export function SignupScreen({ onBackToLogin }: SignupScreenProps) {
+export function SignupScreen({ onBackToLogin, onBackToWelcome }: SignupScreenProps) {
   const [formData, setFormData] = useState({
     userName: '',
     emailAddress: '',
@@ -152,7 +153,7 @@ export function SignupScreen({ onBackToLogin }: SignupScreenProps) {
             <CardHeader>
               <div className="flex items-center gap-2">
                 <Button
-                  onClick={onBackToLogin}
+                  onClick={onBackToWelcome}
                   variant="ghost"
                   size="sm"
                   className="p-1 h-auto hover:bg-green-100"
