@@ -7,14 +7,14 @@ import { ArrowLeft, UserPlus, Eye, EyeOff, Leaf, Apple, Target, Zap } from 'luci
 import { ImageWithFallback } from '../components/figma/ImageWithFallback';
 import axios from 'axios';
 interface SignupScreenProps {
-  onSignUp: () => void;
   onBackToLogin: () => void;
+  onBackToWelcome: () => void;
 }
 
-export function SignupScreen({ onSignUp, onBackToLogin }: SignupScreenProps) {
+export function SignupScreen({ onBackToLogin, onBackToWelcome }: SignupScreenProps) {
   const [formData, setFormData] = useState({
-    name: '',
-    email: '',
+    userName: '',
+    emailAddress: '',
     password: '',
     confirmPassword: ''
   });
@@ -22,26 +22,46 @@ export function SignupScreen({ onSignUp, onBackToLogin }: SignupScreenProps) {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [registrationSuccess, setRegistrationSuccess] = useState(false);
   const doSignup = async () => {
-    try{
-      const response = await axios.post('http://localhost:8080/v1/signup', formData);
-      localStorage.setItem("name", formData.name);
-      localStorage.setItem("email", formData.email);
-      console.log(response.data);
+    try {
+      const response = await axios.post('http://localhost:8080/v1/user', formData);
+      return response; // Return successful response
     } catch (error) {
-      setErrMessage("User already exists !");
-      console.error('Error saving food macros:', error);
+      if (axios.isAxiosError(error) && error.response) {
+        if (error.response.status === 409) {
+          setErrMessage("User already exists! Email address is already registered.");
+        } else {
+          setErrMessage(`Error: ${error.response.data?.message || 'Something went wrong'}`); 
+        }
+      } else {
+        setErrMessage("An unexpected error occurred");
+      }
+      console.error('Error during signup:', error);
+      throw error; // Re-throw the error so it can be caught in handleSubmit
     }
   }
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (formData.name && formData.email) {
+    if (formData.userName && formData.emailAddress) {
       setIsLoading(true);
-      // Simulate signup process
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      onSignUp();
-      await doSignup();
-      setIsLoading(false);
+      setErrMessage(""); // Clear any previous error messages
+      try {
+        // Simulate signup process
+        await new Promise(resolve => setTimeout(resolve, 1000));
+        await doSignup();
+        // Show success dialog instead of redirecting immediately
+        setRegistrationSuccess(true);
+        // Wait 3 seconds then redirect to login
+        setTimeout(() => {
+          onBackToLogin(); // Redirect to welcome screen instead of onboarding
+        }, 3000);
+      } catch (error) {
+        // Error is already handled in doSignup
+        console.error("Error in handleSubmit:", error);
+      } finally {
+        setIsLoading(false);
+      }
     }
   };
 
@@ -49,8 +69,27 @@ export function SignupScreen({ onSignUp, onBackToLogin }: SignupScreenProps) {
     setFormData(prev => ({ ...prev, [field]: value }));
   };
 
+  // Success dialog component
+  const SuccessDialog = () => (
+    <div className="fixed inset-0 flex items-center justify-center z-50 bg-black bg-opacity-50">
+      <div className="bg-white p-6 rounded-lg shadow-xl max-w-md w-full transform transition-all">
+        <div className="flex flex-col items-center text-center">
+          <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mb-4">
+            <svg className="w-8 h-8 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"></path>
+            </svg>
+          </div>
+          <h3 className="text-lg font-medium text-gray-900 mb-2">Registration Successful!</h3>
+          <p className="text-sm text-gray-500">Redirecting to login page...</p>
+        </div>
+      </div>
+    </div>
+  );
+
   return (
     <div className="min-h-screen relative">
+      {/* Show success dialog when registration is successful */}
+      {registrationSuccess && <SuccessDialog />}
       {/* Background */}
       <div className="absolute inset-0 bg-gradient-to-br from-green-50 via-white to-green-100" />
 
@@ -114,7 +153,7 @@ export function SignupScreen({ onSignUp, onBackToLogin }: SignupScreenProps) {
             <CardHeader>
               <div className="flex items-center gap-2">
                 <Button
-                  onClick={onBackToLogin}
+                  onClick={onBackToWelcome}
                   variant="ghost"
                   size="sm"
                   className="p-1 h-auto hover:bg-green-100"
@@ -135,26 +174,26 @@ export function SignupScreen({ onSignUp, onBackToLogin }: SignupScreenProps) {
               <form onSubmit={handleSubmit} className="space-y-4">
                 <div className="space-y-2" style={{color : "red"}}>{errMessage}</div>
                 <div className="space-y-2">
-                  <Label htmlFor="name" className="text-gray-700">Full Name</Label>
+                  <Label htmlFor="userName" className="text-gray-700">Username</Label>
                   <Input
-                    id="name"
+                    id="userName"
                     type="text"
-                    value={formData.name}
-                    onChange={(e) => handleInputChange('name', e.target.value)}
-                    placeholder="Enter your full name"
+                    value={formData.userName}
+                    onChange={(e) => handleInputChange('userName', e.target.value)}
+                    placeholder="Enter your username"
                     className="border-green-200 focus:border-green-500 focus:ring-green-500/20"
                     required
                   />
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="email" className="text-gray-700">Email</Label>
+                  <Label htmlFor="emailAddress" className="text-gray-700">Email</Label>
                   <Input
-                    id="email"
+                    id="emailAddress"
                     type="email"
-                    value={formData.email}
-                    onChange={(e) => handleInputChange('email', e.target.value)}
-                    placeholder="Enter your email"
+                    value={formData.emailAddress}
+                    onChange={(e) => handleInputChange('emailAddress', e.target.value)}
+                    placeholder="Enter your email address"
                     className="border-green-200 focus:border-green-500 focus:ring-green-500/20"
                     required
                   />
@@ -170,6 +209,7 @@ export function SignupScreen({ onSignUp, onBackToLogin }: SignupScreenProps) {
                       onChange={(e) => handleInputChange('password', e.target.value)}
                       placeholder="Create a password"
                       className="border-green-200 focus:border-green-500 focus:ring-green-500/20 pr-10"
+                      disabled={true}
                     />
                     <Button
                       type="button"
@@ -197,6 +237,7 @@ export function SignupScreen({ onSignUp, onBackToLogin }: SignupScreenProps) {
                       onChange={(e) => handleInputChange('confirmPassword', e.target.value)}
                       placeholder="Confirm your password"
                       className="border-green-200 focus:border-green-500 focus:ring-green-500/20 pr-10"
+                      disabled={true}
                     />
                     <Button
                       type="button"

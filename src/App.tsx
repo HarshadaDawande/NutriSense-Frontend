@@ -1,6 +1,6 @@
 import { useState } from 'react';
+import { WelcomeScreen } from './pages/WelcomeScreen';
 import { LoginScreen } from './pages/LoginScreen';
-import { LoginForm } from './pages/LoginForm';
 import { SignupScreen } from './pages/SignupScreen';
 import { Dashboard } from './pages/Dashboard';
 import { MacroTargets as MacroTargetsComponent } from './pages/MacroTargets';
@@ -11,10 +11,11 @@ import { calculateMacroTotals } from './utils';
 // Types are now imported from './types'
 
 export default function App() {
-  const [currentScreen, setCurrentScreen] = useState<Screen>('login');
+  const [currentScreen, setCurrentScreen] = useState<Screen>('welcome');
   const [isFirstTimeUser, setIsFirstTimeUser] = useState(true);
   const [hasSetTargets, setHasSetTargets] = useState(false);
   const [userEmail, setUserEmail] = useState('');
+  const [userName, setUserName] = useState('');
   const [macroTargets, setMacroTargets] = useState<MacroTargets>({
     calories: 2000,
     protein: 150,
@@ -34,33 +35,6 @@ export default function App() {
 
   const deleteMeal = (mealId: string) => {
     setMeals(prev => prev.filter(meal => meal.id !== mealId));
-  };
-
-  const handleShowLoginForm = () => {
-    setCurrentScreen('loginForm');
-  };
-
-  const handleLogin = (email: string, _password: string) => {
-    setUserEmail(email);
-    
-    // Check if this is a returning user (simple check based on email)
-    const isReturningUser = email === 'demo@example.com' || hasSetTargets;
-    
-    if (isReturningUser) {
-      setIsFirstTimeUser(false);
-      setHasSetTargets(true);
-      setCurrentScreen('dashboard');
-    } else {
-      setIsFirstTimeUser(true);
-      setHasSetTargets(false);
-      setCurrentScreen('targets');
-    }
-  };
-
-  const handleSignUp = () => {
-    setIsFirstTimeUser(true);
-    setHasSetTargets(false);
-    setCurrentScreen('targets');
   };
 
   const handleTargetsSave = (targets: MacroTargets) => {
@@ -86,33 +60,46 @@ export default function App() {
     setIsFirstTimeUser(true);
     setHasSetTargets(false);
     setMeals([]);
-    setCurrentScreen('login');
+    setCurrentScreen('welcome');
   };
 
   const currentMacros = calculateMacroTotals(meals);
 
   const renderScreen = () => {
     switch (currentScreen) {
-      case 'login':
+      case 'welcome':
         return (
-          <LoginScreen 
-            onLogin={handleShowLoginForm}
+          <WelcomeScreen 
+            onLogin={() => setCurrentScreen('login')}
             onSignUp={() => setCurrentScreen('signup')}
           />
         );
-      case 'loginForm':
+      case 'login':
         return (
-          <LoginForm
-            onLogin={handleLogin}
-            onBack={() => setCurrentScreen('login')}
+          <LoginScreen
+            onLogin={(_, __) => {
+              // Check if user data is stored in localStorage
+              const userDataStr = localStorage.getItem('userData');
+              if (userDataStr) {
+                try {
+                  const userData = JSON.parse(userDataStr);
+                  setUserEmail(userData.emailAddress);
+                  setUserName(userData.userName);
+                  setCurrentScreen('dashboard');
+                } catch (error) {
+                  console.error('Error parsing user data from localStorage:', error);
+                }
+              }
+            }}
+            onBack={() => setCurrentScreen('welcome')}
             onSignUp={() => setCurrentScreen('signup')}
           />
         );
       case 'signup':
         return (
           <SignupScreen 
-            onSignUp={handleSignUp}
             onBackToLogin={() => setCurrentScreen('login')}
+            onBackToWelcome={() => setCurrentScreen('welcome')}
           />
         );
       case 'dashboard':
@@ -124,6 +111,7 @@ export default function App() {
             onNavigate={setCurrentScreen}
             onLogout={handleLogout}
             userEmail={userEmail}
+            userName={userName}
           />
         );
       case 'targets':
@@ -148,8 +136,8 @@ export default function App() {
         );
       default:
         return (
-          <LoginScreen 
-            onLogin={handleShowLoginForm}
+          <WelcomeScreen 
+            onLogin={() => setCurrentScreen('login')}
             onSignUp={() => setCurrentScreen('signup')}
           />
         );

@@ -14,9 +14,10 @@ interface DashboardProps {
   onNavigate: (screen: Screen) => void;
   onLogout?: () => void;
   userEmail?: string;
+  userName?: string;
 }
 
-export function Dashboard({ targets, current, meals, onNavigate, onLogout, userEmail }: DashboardProps) {
+export function Dashboard({ targets, current, meals, onNavigate, onLogout, userEmail, userName }: DashboardProps) {
   const [selectedDate, setSelectedDate] = useState(new Date());
 
   // Helper function to check if two dates are the same day
@@ -184,9 +185,14 @@ export function Dashboard({ targets, current, meals, onNavigate, onLogout, userE
                 </h1>
               </div>
               {userEmail && (
-                <div className="flex items-center gap-1 text-xs text-gray-500 mt-1 ml-10">
-                  <User className="w-3 h-3" />
-                  {userEmail}
+                <div className="flex flex-col text-xs text-gray-500 mt-1 ml-10">
+                  <div className="flex items-center gap-1">
+                    <User className="w-3 h-3" />
+                    {userName ? userName : 'User'}
+                  </div>
+                  <div className="flex items-center gap-1">
+                    <span className="text-xs">{userEmail}</span>
+                  </div>
                 </div>
               )}
             </div>
