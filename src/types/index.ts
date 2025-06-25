@@ -1,4 +1,4 @@
-export type Screen = 'login' | 'loginForm' | 'signup' | 'dashboard' | 'targets' | 'meals';
+export type Screen = 'welcome' | 'login' | 'signup' | 'dashboard' | 'targets' | 'meals';
 
 export type MealType = 'breakfast' | 'lunch' | 'dinner' | 'snack';
 
