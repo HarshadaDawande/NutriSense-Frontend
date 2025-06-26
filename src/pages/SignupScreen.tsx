@@ -16,6 +16,7 @@ export function SignupScreen({ onBackToLogin, onBackToWelcome }: SignupScreenPro
     userName: '',
     emailAddress: '',
     isFirstTimeUser: 'true',
+    hasSetTargets: 'false',
     password: '',
     confirmPassword: ''
   });

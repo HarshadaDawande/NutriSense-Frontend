@@ -1,4 +1,5 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import axios from 'axios';
 import { WelcomeScreen } from './pages/WelcomeScreen';
 import { LoginScreen } from './pages/LoginScreen';
 import { SignupScreen } from './pages/SignupScreen';
@@ -8,12 +9,33 @@ import { MealLogging } from './pages/MealLogging';
 import type { Screen, MacroTargets, Meal } from './types';
 import { calculateMacroTotals } from './utils';
 
-// Types are now imported from './types'
-
 export default function App() {
   const [currentScreen, setCurrentScreen] = useState<Screen>('welcome');
-  const [isFirstTimeUser, setIsFirstTimeUser] = useState(true);
-  const [hasSetTargets, setHasSetTargets] = useState(false);
+  const userData = localStorage.getItem('userData');
+  const [isFirstTimeUser, setIsFirstTimeUser] = useState(() => {
+    return userData ? JSON.parse(userData).isFirstTimeUser : true;
+  });
+  const [hasSetTargets, setHasSetTargets] = useState(() => {
+    return userData ? JSON.parse(userData).hasSetTargets : false;
+  });
+
+  // Save hasSetTargets to userData object in localStorage whenever it changes
+  useEffect(() => {
+    const userData = localStorage.getItem('userData');
+    if (userData) {
+      const parsedData = JSON.parse(userData);
+      parsedData.hasSetTargets = hasSetTargets;
+      localStorage.setItem('userData', JSON.stringify(parsedData));
+    }
+  }, [hasSetTargets]);
+  useEffect(() => {
+    const userData = localStorage.getItem('userData');
+    if (userData) {
+      const parsedData = JSON.parse(userData);
+      parsedData.isFirstTimeUser = isFirstTimeUser;
+      localStorage.setItem('userData', JSON.stringify(parsedData));
+    }
+  }, [isFirstTimeUser]);
   const [userEmail, setUserEmail] = useState('');
   const [userName, setUserName] = useState('');
   const [macroTargets, setMacroTargets] = useState<MacroTargets>({
@@ -37,14 +59,50 @@ export default function App() {
     setMeals(prev => prev.filter(meal => meal.id !== mealId));
   };
 
-  const handleTargetsSave = (targets: MacroTargets) => {
-    setMacroTargets(targets);
-    setHasSetTargets(true);
+  const saveTargets = async (targets: MacroTargets) => {
+    try {
+      const userData = localStorage.getItem('userData');
+      if (!userData) throw new Error('User data not found');
+      const parsedData = JSON.parse(userData);
 
-    if (isFirstTimeUser) {
-      // For first-time users, go to meal logging after setting targets
-      setCurrentScreen('meals');
-    } else {
+      await axios.post('http://localhost:8080/v1/meal/targets', {
+        userName: parsedData.userName,
+        emailAddress: parsedData.emailAddress,
+        createdAt: new Date().toISOString(),
+        calories: targets.calories,
+        protein: targets.protein,
+        carbs: targets.carbs,
+        fats: targets.fats
+      });
+    } catch (error) {
+      console.error('Failed to save targets:', error);
+      throw error;
+    }
+  };
+
+  const handleTargetsSave = async (targets: MacroTargets) => {
+    try {
+      await saveTargets(targets);
+      setMacroTargets(targets);
+      setHasSetTargets(true);
+
+      if (isFirstTimeUser) {
+        // For first-time users, go to meal logging after setting targets
+        localStorage.setItem('userData', JSON.stringify({
+          emailAddress: userEmail,
+          userName: userName,
+          isFirstTimeUser: false,
+          hasSetTargets: true,
+          createdAt: new Date().toISOString()
+        }));
+        setCurrentScreen('meals');
+      } else {
+        // For returning users, go back to dashboard
+        setCurrentScreen('dashboard');
+      }
+    } catch (error) {
+      console.error('Error saving targets:', error);
+      alert('Failed to save your targets. Please try again.');
       // For returning users, go back to dashboard
       setCurrentScreen('dashboard');
     }
@@ -67,8 +125,9 @@ export default function App() {
   const currentMacros = calculateMacroTotals(meals);
 
   const renderScreen = () => {
-    console.log('currentScreen in App.tsx:', currentScreen);
-    console.log('isFirstTimeUser in App.tsx:', isFirstTimeUser);
+    // console.log('currentScreen in App.tsx:', currentScreen);
+    // console.log('isFirstTimeUser in App.tsx:', isFirstTimeUser);
+    // console.log('hasSetTargets in App.tsx:', hasSetTargets);
     switch (currentScreen) {
       case 'welcome':
         localStorage.removeItem('userData');
@@ -90,6 +149,7 @@ export default function App() {
                   setUserEmail(userData.emailAddress);
                   setUserName(userData.userName);
                   setIsFirstTimeUser(userData.isFirstTimeUser === 'true');
+                  setHasSetTargets(userData.hasSetTargets === 'true');
                   (isFirstTimeUser) ?
                       setCurrentScreen('targets') : setCurrentScreen('dashboard');
                 } catch (error) {
@@ -121,7 +181,6 @@ export default function App() {
           />
         );
       case 'targets':
-        console.log('--> Rendering MacroTargetsComponent with targets:', isFirstTimeUser, hasSetTargets);
         return (
           <MacroTargetsComponent
             targets={macroTargets}

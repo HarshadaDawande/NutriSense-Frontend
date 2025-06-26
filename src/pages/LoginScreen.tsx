@@ -18,6 +18,7 @@ type UserData = {
   userName: string;
   emailAddress: string;
   isFirstTimeUser: boolean;
+  hasSetTargets: boolean;
   createdAt: string;
 }
 
