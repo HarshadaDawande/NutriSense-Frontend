@@ -5,7 +5,7 @@ import { MealForm } from './MealForm';
 import { MacroAnalysis } from './MacroAnalysis';
 import { MealLibrary } from './MealLibrary';
 import { QuickAddMeals } from './QuickAddMeals';
-import { DatePicker } from './DatePicker';
+//import { DatePicker } from './DatePicker';
 import type { Meal, MealType } from '../../types';
 
 interface RegularMealLoggingProps {
@@ -23,6 +23,7 @@ interface RegularMealLoggingProps {
     };
   };
   meals: Meal[];
+  todaysMeals?: Meal[];
   quickMeals: Array<{
     name: string;
     description: string;
@@ -51,6 +52,7 @@ interface RegularMealLoggingProps {
 export function RegularMealLogging({
   selectedMeal,
   meals,
+  todaysMeals = [],
   quickMeals,
   isTrackingEnabled,
   onMealChange,
@@ -61,8 +63,6 @@ export function RegularMealLogging({
   onBack,
   onSubmit,
   getStatusMessage,
-  selectedDate,
-  onDateChange
 }: RegularMealLoggingProps) {
   const headerTitle = "Add Meal";
   const headerDescription = "Add a meal and get AI-powered macro analysis";
@@ -113,13 +113,13 @@ export function RegularMealLogging({
                     onAnalyzeMeal={onAnalyzeMeal}
                   />
                   
-                  {/* Date Picker */}
+                  {/* Date Picker
                   <div className="bg-white/80 backdrop-blur-sm border border-green-200 shadow-lg rounded-lg p-4">
                     <DatePicker 
                       selectedDate={selectedDate} 
                       onDateChange={onDateChange} 
                     />
-                  </div>
+                  </div> */}
 
                   {/* Analysis Results - Always show if available */}
                   {selectedMeal.macros && (
@@ -139,6 +139,7 @@ export function RegularMealLogging({
                 {/* Your Meal Library - Top Half */}
                 <MealLibrary
                   meals={meals}
+                  todaysMeals={todaysMeals}
                   onSelectMeal={onSelectSavedMeal}
                   onDeleteMeal={onDeleteMeal}
                   selectedMeal={selectedMeal}

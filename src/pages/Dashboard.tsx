@@ -1,10 +1,12 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
 import { Button } from '../components/ui/button';
 import { Progress } from '../components/ui/progress';
 import { PieChart, Pie, Cell, ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip } from 'recharts';
-import { Target, Plus, Clock, LogOut, Scale, User, Leaf, Apple, ChevronLeft, ChevronRight, Calendar } from 'lucide-react';
+import { Target, Plus, Clock, LogOut, Scale, User, Leaf, Apple, ChevronLeft, ChevronRight, Calendar, Trash2 } from 'lucide-react';
 import { ImageWithFallback } from '../components/figma/ImageWithFallback';
+import { toast } from 'sonner';
+import { useMealLogging } from '../hooks/useMealLogging';
 import type { MacroTargets, Meal, Screen, Params } from '../types';
 
 interface DashboardProps {
@@ -14,10 +16,35 @@ interface DashboardProps {
   onLogout?: () => void;
   userEmail?: string;
   userName?: string;
+  userId?: string;
 }
 
-export function Dashboard({ targets, meals, onNavigate, onLogout, userEmail, userName }: DashboardProps) {
+export function Dashboard({ targets, meals: initialMeals, onNavigate, onLogout, userEmail, userName, userId }: DashboardProps) {
   const [selectedDate, setSelectedDate] = useState(new Date());
+  
+  // Use our custom hook for meal logging
+  const { 
+    meals, 
+    isLoading, 
+    fetchMeals, 
+    removeMeal 
+  } = useMealLogging({ userId: userId || '' });
+
+  // Fetch meals on component mount
+  useEffect(() => {
+    if (userId) {
+      fetchMeals();
+    }
+  }, [userId, fetchMeals]);
+
+  // Handle meal deletion
+  const handleDeleteMeal = async (mealId: string) => {
+    const success = await removeMeal(mealId);
+    if (success) {
+      toast.success('Meal deleted successfully');
+    }
+    fetchMeals();
+  };
 
   // Helper function to check if two dates are the same day
   const isSameDay = (date1: Date, date2: Date) => {
@@ -26,22 +53,25 @@ export function Dashboard({ targets, meals, onNavigate, onLogout, userEmail, use
            date1.getDate() === date2.getDate();
   };
 
+  // Use the meals from the API or fall back to the props
+  const mealsToUse = userId ? meals : initialMeals;
+
   // Get meals for selected date
   const getMealsForDate = (date: Date) => {
-    return meals.filter(meal => isSameDay(new Date(meal.timestamp), date));
+    return mealsToUse.filter(meal => isSameDay(new Date(meal.mealDate), date));
   };
 
   // Calculate macros for selected date
   const getMacrosForDate = (date: Date) => {
     const dateMeals = getMealsForDate(date);
     return dateMeals.reduce(
-      (total, meal) => ({
-        calories: total.calories + meal.macros.calories,
-        protein: total.protein + meal.macros.protein,
-        carbs: total.carbs + meal.macros.carbs,
-        fats: total.fats + meal.macros.fats
+      (total: { calories: string, protein: string, carbs: string, fats: string }, meal) => ({
+        calories: (Number(total.calories) + Number(meal.calories)).toString(),
+        protein: (Number(total.protein) + Number(meal.proteins)).toString(),
+        carbs: (Number(total.carbs) + Number(meal.carbs)).toString(),
+        fats: (Number(total.fats) + Number(meal.fats)).toString()
       }),
-      { calories: 0, protein: 0, carbs: 0, fats: 0 }
+      { calories: '0', protein: '0', carbs: '0', fats: '0' }
     );
   };
 
@@ -86,7 +116,7 @@ export function Dashboard({ targets, meals, onNavigate, onLogout, userEmail, use
     { name: 'Fats', value: selectedDateMacros.fats, target: targets.fats, color: macroColors.fats }
   ];
 
-  const calorieProgress = Math.min((selectedDateMacros.calories / targets.calories) * 100, 100);
+  const calorieProgress = Math.min((Number(selectedDateMacros.calories) / Number(targets.calories)) * 100, 100);
 
   const recentMeals = selectedDateMeals.slice(-5).reverse();
 
@@ -133,10 +163,10 @@ export function Dashboard({ targets, meals, onNavigate, onLogout, userEmail, use
   // Get daily summary status
   const getDailySummaryStatus = () => {
     const totalProgress = Object.entries({
-      calories: selectedDateMacros.calories / targets.calories,
-      protein: selectedDateMacros.protein / targets.protein,
-      carbs: selectedDateMacros.carbs / targets.carbs,
-      fats: selectedDateMacros.fats / targets.fats
+      calories: Number(selectedDateMacros.calories) / targets.calories,
+      protein: Number(selectedDateMacros.protein) / targets.protein,
+      carbs: Number(selectedDateMacros.carbs) / targets.carbs,
+      fats: Number(selectedDateMacros.fats) / targets.fats
     });
 
     const achieved = totalProgress.filter(([_, progress]) => progress >= 1 && progress <= 1.1).length;
@@ -150,6 +180,11 @@ export function Dashboard({ targets, meals, onNavigate, onLogout, userEmail, use
   };
 
   const dailySummary = getDailySummaryStatus();
+
+  // Navigate to meal logging page
+  const navigateToMealLogging = () => {
+    onNavigate('meals', { initialDate: selectedDate });
+  };
 
   return (
     <div className="min-h-screen relative">
@@ -283,12 +318,12 @@ export function Dashboard({ targets, meals, onNavigate, onLogout, userEmail, use
                     {selectedDateMacros.calories} / {targets.calories}
                   </span>
                   <span className="text-sm text-gray-600 bg-green-100 px-3 py-1 rounded-full">
-                    {targets.calories - selectedDateMacros.calories} remaining
+                    {Number(targets.calories) - Number(selectedDateMacros.calories)} remaining
                   </span>
                 </div>
                 <Progress 
                   value={calorieProgress} 
-                  className={`h-3 bg-gray-200 ${getProgressIndicatorColor(selectedDateMacros.calories, targets.calories)}`}
+                  className={`h-3 bg-gray-200 ${getProgressIndicatorColor(Number(selectedDateMacros.calories), Number(targets.calories))}`}
                 />
               </div>
             </CardContent>
@@ -350,7 +385,7 @@ export function Dashboard({ targets, meals, onNavigate, onLogout, userEmail, use
           {/* Macro Details with Color-Coded Progress */}
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
             {macroData.map((macro) => {
-              const progressColor = getProgressIndicatorColor(macro.value, macro.target);
+              const progressColor = getProgressIndicatorColor(Number(macro.value), Number(macro.target));
               return (
                 <Card key={macro.name} className="bg-white/70 backdrop-blur-sm border border-green-200 shadow-lg hover:shadow-xl transition-shadow">
                   <CardContent className="p-3 sm:p-4">
@@ -367,18 +402,18 @@ export function Dashboard({ targets, meals, onNavigate, onLogout, userEmail, use
                         <span className="text-gray-600">{macro.target}g</span>
                       </div>
                       <Progress 
-                        value={Math.min((macro.value / macro.target) * 100, 100)} 
+                        value={Math.min((Number(macro.value) / Number(macro.target)) * 100, 100)} 
                         className={`h-2 ${progressColor}`}
                       />
                       <div className="text-xs text-center">
                         <span className={
-                          macro.value >= macro.target * 1.1 ? 'text-red-600' :
-                          macro.value >= macro.target ? 'text-green-600' : 
+                          Number(macro.value) >= Number(macro.target) * 1.1 ? 'text-red-600' :
+                          Number(macro.value) >= Number(macro.target) ? 'text-green-600' : 
                           'text-gray-600'
                         }>
-                          {macro.value >= macro.target * 1.1 ? 'Over target' :
-                           macro.value >= macro.target ? 'Target achieved' : 
-                           `${Math.round(((macro.target - macro.value) / macro.target) * 100)}% to go`}
+                          {Number(macro.value) >= Number(macro.target) * 1.1 ? 'Over target' :
+                           Number(macro.value) >= Number(macro.target) ? 'Target achieved' : 
+                           `${Math.round(((Number(macro.target) - Number(macro.value)) / Number(macro.target)) * 100)}% to go`}
                         </span>
                       </div>
                     </div>
@@ -401,7 +436,7 @@ export function Dashboard({ targets, meals, onNavigate, onLogout, userEmail, use
                   </span>
                 </div>
                 <Button
-                  onClick={() => onNavigate('meals', { initialDate: selectedDate })}
+                  onClick={navigateToMealLogging}
                   size="sm"
                   className="bg-green-500 hover:bg-green-600 text-white w-full sm:w-auto shadow-lg h-10 sm:h-9"
                 >
@@ -411,28 +446,44 @@ export function Dashboard({ targets, meals, onNavigate, onLogout, userEmail, use
               </CardTitle>
             </CardHeader>
             <CardContent>
-              {recentMeals.length > 0 ? (
+              {isLoading ? (
+                <div className="text-center py-6">
+                  <p className="text-sm text-gray-600">Loading meals...</p>
+                </div>
+              ) : recentMeals.length > 0 ? (
                 <div className="space-y-3">
                   {recentMeals.map((meal) => (
-                    <div key={meal.id} className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3 bg-green-50 border border-green-100 rounded-lg hover:bg-green-100 transition-colors">
+                    <div key={meal.mealId} className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3 bg-green-50 border border-green-100 rounded-lg hover:bg-green-100 transition-colors">
                       <div className="flex-1">
                         <div className="flex items-center gap-2 mb-1">
-                          <h4 className="font-medium text-sm sm:text-base text-gray-800">{meal.name}</h4>
+                          <h4 className="font-medium text-sm sm:text-base text-gray-800">{meal.mealType}</h4>
                           <span className="text-xs text-gray-500">
-                            {new Date(meal.timestamp).toLocaleTimeString('en-US', { 
+                            {new Date(meal.mealDate).toLocaleTimeString('en-US', { 
                               hour: 'numeric', 
                               minute: '2-digit',
                               hour12: true 
                             })}
                           </span>
                         </div>
-                        <p className="text-xs sm:text-sm text-gray-600 mt-1">{meal.description}</p>
+                        <p className="text-xs sm:text-sm text-gray-600 mt-1">{meal.mealDescription}</p>
                       </div>
-                      <div className="text-left sm:text-right">
-                        <div className="font-medium text-sm sm:text-base text-green-600">{meal.macros.calories} cal</div>
-                        <div className="text-xs sm:text-sm text-gray-600">
-                          P: {meal.macros.protein}g | C: {meal.macros.carbs}g | F: {meal.macros.fats}g
+                      <div className="flex items-center gap-2">
+                        <div className="text-left sm:text-right">
+                          <div className="font-medium text-sm sm:text-base text-green-600">{meal.calories} cal</div>
+                          <div className="text-xs sm:text-sm text-gray-600">
+                            P: {meal.proteins}g | C: {meal.carbs}g | F: {meal.fats}g
+                          </div>
                         </div>
+                        {userId && (
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => handleDeleteMeal(meal.mealId)}
+                            className="text-gray-500 hover:text-red-600 hover:bg-red-50 h-8 w-8 p-0"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        )}
                       </div>
                     </div>
                   ))}

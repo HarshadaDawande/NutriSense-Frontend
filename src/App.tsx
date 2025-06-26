@@ -6,6 +6,7 @@ import { Dashboard } from './pages/Dashboard';
 import { MacroTargets as MacroTargetsComponent } from './pages/MacroTargets';
 import { MealLogging } from './pages/MealLogging';
 import type { Screen, MacroTargets, Meal, Params } from './types';
+import { v4 as uuidv4 } from 'uuid';
 //import { calculateMacroTotals } from './utils';
 
 // Types are now imported from './types'
@@ -16,6 +17,7 @@ export default function App() {
   const [hasSetTargets, setHasSetTargets] = useState(false);
   const [userEmail, setUserEmail] = useState('');
   const [userName, setUserName] = useState('');
+  const [userId, setUserId] = useState('');
   const [macroTargets, setMacroTargets] = useState<MacroTargets>({
     calories: 2000,
     protein: 150,
@@ -28,14 +30,14 @@ export default function App() {
   const addMeal = (meal: Omit<Meal, 'id'> & { timestamp?: Date }) => {
     const newMeal: Meal = {
       ...meal,
-      id: Date.now().toString(),
-      timestamp: meal.timestamp || new Date()
+      mealId: uuidv4(),
+      mealDate: meal.timestamp ? new Date(meal.timestamp).toISOString() : new Date().toISOString()
     };
     setMeals(prev => [...prev, newMeal]);
   };
 
   const deleteMeal = (mealId: string) => {
-    setMeals(prev => prev.filter(meal => meal.id !== mealId));
+    setMeals(prev => prev.filter(meal => meal.mealId !== mealId));
   };
 
   const handleTargetsSave = (targets: MacroTargets) => {
@@ -95,6 +97,7 @@ export default function App() {
                   const userData = JSON.parse(userDataStr);
                   setUserEmail(userData.emailAddress);
                   setUserName(userData.userName);
+                  setUserId(userData.userId);
                   setCurrentScreen('dashboard');
                 } catch (error) {
                   console.error('Error parsing user data from localStorage:', error);
@@ -121,6 +124,7 @@ export default function App() {
             onLogout={handleLogout}
             userEmail={userEmail}
             userName={userName}
+            userId={userId}
           />
         );
       case 'targets':
@@ -142,6 +146,7 @@ export default function App() {
             isFirstTime={isFirstTimeUser}
             onFirstMealComplete={handleFirstMealComplete}
             initialDate={navigationParams?.initialDate}
+            userId={userId}
           />
         );
       default:

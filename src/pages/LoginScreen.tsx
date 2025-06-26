@@ -18,6 +18,7 @@ type UserData = {
   userName: string;
   emailAddress: string;
   createdAt: string;
+  userId: string;
 }
 
 export function LoginScreen({ onLogin, onBack, onSignUp }: LoginScreenProps) {

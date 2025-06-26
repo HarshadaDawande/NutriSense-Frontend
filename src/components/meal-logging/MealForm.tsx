@@ -112,8 +112,8 @@ export function MealForm({
           </p>
         </div>
 
-        {/* Calculate Macros Button - Only for manual entries */}
-        {source === 'manual' && !hasMacros && (
+        {/* Calculate Macros Button - Only for manual entries and changed description*/}
+        {!hasMacros && (
           <Button 
             type="button" 
             onClick={onAnalyzeMeal} 
