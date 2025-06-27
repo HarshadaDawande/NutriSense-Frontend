@@ -38,7 +38,7 @@ export interface MealPayload {
 // Meal related API calls
 export const getMealsByUserId = async (userId: string): Promise<MealPayload[]> => {
   try {
-    const response = await axios.get(`http://localhost:8080/v1/${userId}/meals`);
+    const response = await axios.get(`http://localhost:8080/v1/meal/${userId}/meals`);
     return response.data;
   } catch (error) {
     if (axios.isAxiosError(error) && error.response) {
@@ -58,7 +58,7 @@ export const getMealsByUserId = async (userId: string): Promise<MealPayload[]> =
 export const createMeal = async (mealData: MealPayload) => {
     try {
       console.log('Sending meal data to API:', mealData); // Log the data being sent
-      const response = await axios.post(`http://localhost:8080/v1/add`, mealData);
+      const response = await axios.post(`http://localhost:8080/v1/meal/add`, mealData);
       console.log('API response:', response.data); // Log the response
       return response.data;
     } catch (error) {
@@ -87,7 +87,7 @@ export const updateMeal = async (mealId: string, mealData: Partial<MealPayload>)
 
 export const deleteMeal = async (mealId: string) => {
   try {
-    const response = await apiClient.delete(`/meals/${mealId}`);
+    const response = await apiClient.delete(`/meal/${mealId}`);
     return response.data;
   } catch (error) {
     throw error;
