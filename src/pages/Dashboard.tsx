@@ -111,9 +111,9 @@ export function Dashboard({ targets, meals: initialMeals, onNavigate, onLogout, 
   };
 
   const macroData = [
-    { name: 'Protein', value: selectedDateMacros.protein, target: targets.protein, color: macroColors.protein },
-    { name: 'Carbs', value: selectedDateMacros.carbs, target: targets.carbs, color: macroColors.carbs },
-    { name: 'Fats', value: selectedDateMacros.fats, target: targets.fats, color: macroColors.fats }
+    { name: 'Protein', value: Number(selectedDateMacros.protein), target: Number(targets.protein), color: macroColors.protein },
+    { name: 'Carbs', value: Number(selectedDateMacros.carbs), target: Number(targets.carbs), color: macroColors.carbs },
+    { name: 'Fats', value: Number(selectedDateMacros.fats), target: Number(targets.fats), color: macroColors.fats }
   ];
 
   const calorieProgress = Math.min((Number(selectedDateMacros.calories) / Number(targets.calories)) * 100, 100);
@@ -173,10 +173,10 @@ export function Dashboard({ targets, meals: initialMeals, onNavigate, onLogout, 
     const exceeded = totalProgress.filter(([_, progress]) => progress > 1.1).length;
     
     if (achieved === 4) return { status: 'perfect', color: 'text-green-600', message: 'Perfect day! All targets achieved!' };
-    if (achieved >= 3) return { status: 'great', color: 'text-green-600', message: 'Great progress on your goals!' };
-    if (achieved >= 2) return { status: 'good', color: 'text-yellow-600', message: 'Good progress, keep it up!' };
-    if (exceeded >= 2) return { status: 'over', color: 'text-red-600', message: 'Watch your intake levels' };
-    return { status: 'start', color: 'text-gray-600', message: 'Start tracking to see your progress' };
+    else if (achieved >= 3) return { status: 'great', color: 'text-green-600', message: 'Great progress on your goals!' };
+    else if (achieved >= 2) return { status: 'good', color: 'text-yellow-600', message: 'Good progress, keep it up!' };
+    else if (exceeded >= 2) return { status: 'over', color: 'text-red-600', message: 'Watch your intake levels' };
+    else return { status: 'start', color: 'text-gray-600', message: 'Start tracking to see your progress' };
   };
 
   const dailySummary = getDailySummaryStatus();
@@ -317,8 +317,15 @@ export function Dashboard({ targets, meals: initialMeals, onNavigate, onLogout, 
                   <span className="text-xl sm:text-2xl font-bold text-gray-800">
                     {selectedDateMacros.calories} / {targets.calories}
                   </span>
-                  <span className="text-sm text-gray-600 bg-green-100 px-3 py-1 rounded-full">
-                    {Number(targets.calories) - Number(selectedDateMacros.calories)} remaining
+                  <span className={`text-sm px-3 py-1 rounded-full ${
+                    Number(selectedDateMacros.calories) > Number(targets.calories) 
+                      ? 'bg-red-100 text-red-600' 
+                      : 'bg-green-100 text-gray-600'
+                  }`}>
+                    {Number(selectedDateMacros.calories) > Number(targets.calories)
+                      ? `Over target by ${Number(selectedDateMacros.calories) - Number(targets.calories)} calories`
+                      : `${Number(targets.calories) - Number(selectedDateMacros.calories)} calories remaining`
+                    }
                   </span>
                 </div>
                 <Progress 
