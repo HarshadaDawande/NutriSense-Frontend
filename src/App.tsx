@@ -160,6 +160,7 @@ export default function App() {
                   const userData = JSON.parse(userDataStr);
                   setUserEmail(userData.emailAddress);
                   setUserName(userData.userName);
+                  setUserId(userData.userId);
                   setIsFirstTimeUser(userData.isFirstTimeUser === 'true');
                   setHasSetTargets(userData.hasSetTargets === 'true');
                   (isFirstTimeUser) ?
