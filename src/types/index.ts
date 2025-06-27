@@ -17,10 +17,18 @@ export interface MacroEntry {
 }
 
 export interface Meal {
-  id: string;
-  name: string;
-  description: string;
-  type: MealType;
-  macros: MacroEntry;
-  timestamp: Date;
+  mealName: string;
+  mealId: string;
+  mealType: MealType;
+  mealDescription: string;
+  proteins: string;
+  carbs: string;
+  fats: string;
+  calories: string;
+  mealDate: string;
 } 
+
+export interface Params {
+  initialDate?: Date;
+  [key: string]: any;
+}

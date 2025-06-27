@@ -20,6 +20,7 @@ type UserData = {
   isFirstTimeUser: boolean;
   hasSetTargets: boolean;
   createdAt: string;
+  userId: string;
 }
 
 export function LoginScreen({ onLogin, onBack, onSignUp }: LoginScreenProps) {

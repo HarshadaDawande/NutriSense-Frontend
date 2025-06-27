@@ -1,24 +1,52 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
 import { Button } from '../components/ui/button';
 import { Progress } from '../components/ui/progress';
 import { PieChart, Pie, Cell, ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip } from 'recharts';
-import { Target, Plus, Clock, LogOut, Scale, User, Leaf, Apple, ChevronLeft, ChevronRight, Calendar } from 'lucide-react';
+import { Target, Plus, Clock, LogOut, Scale, User, Leaf, Apple, ChevronLeft, ChevronRight, Calendar as CalendarIcon, Trash2 } from 'lucide-react';
 import { ImageWithFallback } from '../components/figma/ImageWithFallback';
-import type { MacroTargets, MacroEntry, Meal, Screen } from '../types';
+import { toast } from 'sonner';
+import { useMealLogging } from '../hooks/useMealLogging';
+import type { MacroTargets, Meal, Screen, Params } from '../types';
+import { Calendar as CalendarComponent } from '../components/ui/calendar';
 
 interface DashboardProps {
   targets: MacroTargets;
-  current: MacroEntry;
   meals: Meal[];
-  onNavigate: (screen: Screen) => void;
+  onNavigate: (screen: Screen, params?: Params) => void;
   onLogout?: () => void;
   userEmail?: string;
   userName?: string;
+  userId?: string;
 }
 
-export function Dashboard({ targets, current, meals, onNavigate, onLogout, userEmail, userName }: DashboardProps) {
+export function Dashboard({ targets, meals: initialMeals, onNavigate, onLogout, userEmail, userName, userId }: DashboardProps) {
   const [selectedDate, setSelectedDate] = useState(new Date());
+  const [showCalendar, setShowCalendar] = useState(false);
+  
+  // Use our custom hook for meal logging
+  const { 
+    meals, 
+    isLoading, 
+    fetchMeals, 
+    removeMeal 
+  } = useMealLogging({ userId: userId || '' });
+
+  // Fetch meals on component mount
+  useEffect(() => {
+    if (userId) {
+      fetchMeals();
+    }
+  }, [userId, fetchMeals]);
+
+  // Handle meal deletion
+  const handleDeleteMeal = async (mealId: string) => {
+    const success = await removeMeal(mealId);
+    if (success) {
+      toast.success('Meal deleted successfully');
+    }
+    fetchMeals();
+  };
 
   // Helper function to check if two dates are the same day
   const isSameDay = (date1: Date, date2: Date) => {
@@ -27,22 +55,25 @@ export function Dashboard({ targets, current, meals, onNavigate, onLogout, userE
            date1.getDate() === date2.getDate();
   };
 
+  // Use the meals from the API or fall back to the props
+  const mealsToUse = userId ? meals : initialMeals;
+
   // Get meals for selected date
   const getMealsForDate = (date: Date) => {
-    return meals.filter(meal => isSameDay(new Date(meal.timestamp), date));
+    return mealsToUse.filter(meal => isSameDay(new Date(meal.mealDate), date));
   };
 
   // Calculate macros for selected date
   const getMacrosForDate = (date: Date) => {
     const dateMeals = getMealsForDate(date);
     return dateMeals.reduce(
-      (total, meal) => ({
-        calories: total.calories + meal.macros.calories,
-        protein: total.protein + meal.macros.protein,
-        carbs: total.carbs + meal.macros.carbs,
-        fats: total.fats + meal.macros.fats
+      (total: { calories: string, protein: string, carbs: string, fats: string }, meal) => ({
+        calories: (Number(total.calories) + Number(meal.calories)).toString(),
+        protein: (Number(total.protein) + Number(meal.proteins)).toString(),
+        carbs: (Number(total.carbs) + Number(meal.carbs)).toString(),
+        fats: (Number(total.fats) + Number(meal.fats)).toString()
       }),
-      { calories: 0, protein: 0, carbs: 0, fats: 0 }
+      { calories: '0', protein: '0', carbs: '0', fats: '0' }
     );
   };
 
@@ -51,16 +82,16 @@ export function Dashboard({ targets, current, meals, onNavigate, onLogout, userE
   const isToday = isSameDay(selectedDate, new Date());
 
   // Helper function to get progress bar color
-  const getProgressColor = (current: number, target: number) => {
-    const percentage = (current / target) * 100;
-    if (percentage >= 100 && percentage <= 110) {
-      return 'bg-green-500'; // Achieved target (within 10% tolerance)
-    } else if (percentage > 110) {
-      return 'bg-red-500'; // Exceeded target significantly
-    } else {
-      return 'bg-gray-400'; // Not yet achieved
-    }
-  };
+  // const getProgressColor = (current: number, target: number) => {
+  //   const percentage = (current / target) * 100;
+  //   if (percentage >= 100 && percentage <= 110) {
+  //     return 'bg-green-500'; // Achieved target (within 10% tolerance)
+  //   } else if (percentage > 110) {
+  //     return 'bg-red-500'; // Exceeded target significantly
+  //   } else {
+  //     return 'bg-gray-400'; // Not yet achieved
+  //   }
+  // };
 
   // Get progress color indicator for the progress component
   const getProgressIndicatorColor = (current: number, target: number) => {
@@ -82,12 +113,12 @@ export function Dashboard({ targets, current, meals, onNavigate, onLogout, userE
   };
 
   const macroData = [
-    { name: 'Protein', value: selectedDateMacros.protein, target: targets.protein, color: macroColors.protein },
-    { name: 'Carbs', value: selectedDateMacros.carbs, target: targets.carbs, color: macroColors.carbs },
-    { name: 'Fats', value: selectedDateMacros.fats, target: targets.fats, color: macroColors.fats }
+    { name: 'Protein', value: Number(selectedDateMacros.protein), target: Number(targets.protein), color: macroColors.protein },
+    { name: 'Carbs', value: Number(selectedDateMacros.carbs), target: Number(targets.carbs), color: macroColors.carbs },
+    { name: 'Fats', value: Number(selectedDateMacros.fats), target: Number(targets.fats), color: macroColors.fats }
   ];
 
-  const calorieProgress = Math.min((selectedDateMacros.calories / targets.calories) * 100, 100);
+  const calorieProgress = Math.min((Number(selectedDateMacros.calories) / Number(targets.calories)) * 100, 100);
 
   const recentMeals = selectedDateMeals.slice(-5).reverse();
 
@@ -134,23 +165,35 @@ export function Dashboard({ targets, current, meals, onNavigate, onLogout, userE
   // Get daily summary status
   const getDailySummaryStatus = () => {
     const totalProgress = Object.entries({
-      calories: selectedDateMacros.calories / targets.calories,
-      protein: selectedDateMacros.protein / targets.protein,
-      carbs: selectedDateMacros.carbs / targets.carbs,
-      fats: selectedDateMacros.fats / targets.fats
+      calories: Number(selectedDateMacros.calories) / targets.calories,
+      protein: Number(selectedDateMacros.protein) / targets.protein,
+      carbs: Number(selectedDateMacros.carbs) / targets.carbs,
+      fats: Number(selectedDateMacros.fats) / targets.fats
     });
 
     const achieved = totalProgress.filter(([_, progress]) => progress >= 1 && progress <= 1.1).length;
     const exceeded = totalProgress.filter(([_, progress]) => progress > 1.1).length;
     
     if (achieved === 4) return { status: 'perfect', color: 'text-green-600', message: 'Perfect day! All targets achieved!' };
-    if (achieved >= 3) return { status: 'great', color: 'text-green-600', message: 'Great progress on your goals!' };
-    if (achieved >= 2) return { status: 'good', color: 'text-yellow-600', message: 'Good progress, keep it up!' };
-    if (exceeded >= 2) return { status: 'over', color: 'text-red-600', message: 'Watch your intake levels' };
-    return { status: 'start', color: 'text-gray-600', message: 'Start tracking to see your progress' };
+    else if (achieved >= 3) return { status: 'great', color: 'text-green-600', message: 'Great progress on your goals!' };
+    else if (achieved >= 2) return { status: 'good', color: 'text-yellow-600', message: 'Good progress, keep it up!' };
+    else if (exceeded >= 2) return { status: 'over', color: 'text-red-600', message: 'Watch your intake levels' };
+    else return { status: 'start', color: 'text-gray-600', message: 'Start tracking to see your progress' };
   };
 
   const dailySummary = getDailySummaryStatus();
+
+  // Navigate to meal logging page
+  const navigateToMealLogging = () => {
+    onNavigate('meals', { initialDate: selectedDate });
+  };
+
+  // const handleDateChange = (date: Date | undefined) => {
+  //   if (date) {
+  //     setSelectedDate(date);
+  //     setShowCalendar(false);
+  //   }
+  // };
 
   return (
     <div className="min-h-screen relative">
@@ -219,7 +262,7 @@ export function Dashboard({ targets, current, meals, onNavigate, onLogout, userE
           </div>
 
           {/* Date Navigation */}
-          <Card className="bg-white/70 backdrop-blur-sm border border-green-200 shadow-lg">
+          <Card className="relative z-30 bg-white/70 backdrop-blur-sm border border-green-200 shadow-lg">
             <CardContent className="p-4">
               <div className="flex items-center justify-between">
                 <Button
@@ -231,8 +274,14 @@ export function Dashboard({ targets, current, meals, onNavigate, onLogout, userE
                   <ChevronLeft className="w-4 h-4" />
                 </Button>
                 
-                <div className="flex items-center gap-3">
-                  <Calendar className="w-5 h-5 text-green-600" />
+                <div className="relative flex items-center gap-3">
+                  <button
+                    type="button"
+                    onClick={() => setShowCalendar(!showCalendar)}
+                    className="text-green-600 hover:text-green-700"
+                  >
+                    <CalendarIcon className="w-5 h-5" />
+                  </button>
                   <div className="text-center">
                     <h2 className="text-lg font-bold text-gray-800">{formatDate(selectedDate)}</h2>
                     <p className="text-sm text-gray-600">
@@ -243,6 +292,50 @@ export function Dashboard({ targets, current, meals, onNavigate, onLogout, userE
                       })}
                     </p>
                   </div>
+                  {showCalendar && (
+                    <div
+                      className="absolute top-full left-0 z-[999] mt-1 w-72 border border-green-200 rounded-md p-3 bg-white shadow-lg pointer-events-auto"
+                      onClick={(e) => e.stopPropagation()}
+                    >
+                      <div className="mb-3 flex justify-end">
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          className="text-xs border-green-200 text-green-700 hover:bg-green-50 hover:text-green-800"
+                          onClick={() => {
+                            const today = new Date();
+                            setSelectedDate(today);
+                            setShowCalendar(false);
+                          }}
+                        >
+                          Today
+                        </Button>
+                      </div>
+                      <CalendarComponent
+                        mode="single"
+                        selected={selectedDate}
+                        onSelect={(date) => {
+                          console.log('Day selected:', date);
+                          if (date) {
+                            setSelectedDate(date);
+                            setShowCalendar(false);
+                          }
+                        }}
+                        onDayClick={(day) => console.log('Day clicked:', day)}
+                        disabled={(date) => date > new Date()}
+                        className="mx-auto"
+                        classNames={{
+                          day_selected: "bg-green-600 text-white hover:bg-green-700 hover:text-white focus:bg-green-700 focus:text-white",
+                          day_today: "bg-green-50 text-green-800 font-medium",
+                          caption_label: "text-green-800 font-medium",
+                          nav_button: "text-green-600 hover:bg-green-50 hover:text-green-800",
+                          cell: "rounded-full",
+                          day: "rounded-full hover:bg-green-50 hover:text-green-800 focus:bg-green-50 focus:text-green-800"
+                        }}
+                      />
+                    </div>
+                  )}
                 </div>
 
                 <Button
@@ -283,13 +376,20 @@ export function Dashboard({ targets, current, meals, onNavigate, onLogout, userE
                   <span className="text-xl sm:text-2xl font-bold text-gray-800">
                     {selectedDateMacros.calories} / {targets.calories}
                   </span>
-                  <span className="text-sm text-gray-600 bg-green-100 px-3 py-1 rounded-full">
-                    {targets.calories - selectedDateMacros.calories} remaining
+                  <span className={`text-sm px-3 py-1 rounded-full ${
+                    Number(selectedDateMacros.calories) > Number(targets.calories) 
+                      ? 'bg-red-100 text-red-600' 
+                      : 'bg-green-100 text-gray-600'
+                  }`}>
+                    {Number(selectedDateMacros.calories) > Number(targets.calories)
+                      ? `Over target by ${Number(selectedDateMacros.calories) - Number(targets.calories)} calories`
+                      : `${Number(targets.calories) - Number(selectedDateMacros.calories)} calories remaining`
+                    }
                   </span>
                 </div>
                 <Progress 
                   value={calorieProgress} 
-                  className={`h-3 bg-gray-200 ${getProgressIndicatorColor(selectedDateMacros.calories, targets.calories)}`}
+                  className={`h-3 bg-gray-200 ${getProgressIndicatorColor(Number(selectedDateMacros.calories), Number(targets.calories))}`}
                 />
               </div>
             </CardContent>
@@ -351,7 +451,7 @@ export function Dashboard({ targets, current, meals, onNavigate, onLogout, userE
           {/* Macro Details with Color-Coded Progress */}
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
             {macroData.map((macro) => {
-              const progressColor = getProgressIndicatorColor(macro.value, macro.target);
+              const progressColor = getProgressIndicatorColor(Number(macro.value), Number(macro.target));
               return (
                 <Card key={macro.name} className="bg-white/70 backdrop-blur-sm border border-green-200 shadow-lg hover:shadow-xl transition-shadow">
                   <CardContent className="p-3 sm:p-4">
@@ -368,18 +468,18 @@ export function Dashboard({ targets, current, meals, onNavigate, onLogout, userE
                         <span className="text-gray-600">{macro.target}g</span>
                       </div>
                       <Progress 
-                        value={Math.min((macro.value / macro.target) * 100, 100)} 
+                        value={Math.min((Number(macro.value) / Number(macro.target)) * 100, 100)} 
                         className={`h-2 ${progressColor}`}
                       />
                       <div className="text-xs text-center">
                         <span className={
-                          macro.value >= macro.target * 1.1 ? 'text-red-600' :
-                          macro.value >= macro.target ? 'text-green-600' : 
+                          Number(macro.value) >= Number(macro.target) * 1.1 ? 'text-red-600' :
+                          Number(macro.value) >= Number(macro.target) ? 'text-green-600' : 
                           'text-gray-600'
                         }>
-                          {macro.value >= macro.target * 1.1 ? 'Over target' :
-                           macro.value >= macro.target ? 'Target achieved' : 
-                           `${Math.round(((macro.target - macro.value) / macro.target) * 100)}% to go`}
+                          {Number(macro.value) >= Number(macro.target) * 1.1 ? 'Over target' :
+                           Number(macro.value) >= Number(macro.target) ? 'Target achieved' : 
+                           `${Math.round(((Number(macro.target) - Number(macro.value)) / Number(macro.target)) * 100)}% to go`}
                         </span>
                       </div>
                     </div>
@@ -401,41 +501,55 @@ export function Dashboard({ targets, current, meals, onNavigate, onLogout, userE
                     {isToday ? 'Today\'s Meals' : `Meals for ${formatDate(selectedDate)}`} ({selectedDateMeals.length})
                   </span>
                 </div>
-                {isToday && (
-                  <Button
-                    onClick={() => onNavigate('meals')}
-                    size="sm"
-                    className="bg-green-500 hover:bg-green-600 text-white w-full sm:w-auto shadow-lg h-10 sm:h-9"
-                  >
-                    <Plus className="w-4 h-4 mr-2" />
-                    Add Meal
-                  </Button>
-                )}
+                <Button
+                  onClick={navigateToMealLogging}
+                  size="sm"
+                  className="bg-green-500 hover:bg-green-600 text-white w-full sm:w-auto shadow-lg h-10 sm:h-9"
+                >
+                  <Plus className="w-4 h-4 mr-2" />
+                  {isToday ? 'Add Meal' : `Add Meal for ${formatDate(selectedDate)}`}
+                </Button>
               </CardTitle>
             </CardHeader>
             <CardContent>
-              {recentMeals.length > 0 ? (
+              {isLoading ? (
+                <div className="text-center py-6">
+                  <p className="text-sm text-gray-600">Loading meals...</p>
+                </div>
+              ) : recentMeals.length > 0 ? (
                 <div className="space-y-3">
                   {recentMeals.map((meal) => (
-                    <div key={meal.id} className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3 bg-green-50 border border-green-100 rounded-lg hover:bg-green-100 transition-colors">
+                    <div key={meal.mealId} className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3 bg-green-50 border border-green-100 rounded-lg hover:bg-green-100 transition-colors">
                       <div className="flex-1">
                         <div className="flex items-center gap-2 mb-1">
-                          <h4 className="font-medium text-sm sm:text-base text-gray-800">{meal.name}</h4>
+                          <h4 className="font-medium text-sm sm:text-base text-gray-800">{meal.mealType}</h4>
                           <span className="text-xs text-gray-500">
-                            {new Date(meal.timestamp).toLocaleTimeString('en-US', { 
+                            {new Date(meal.mealDate).toLocaleTimeString('en-US', { 
                               hour: 'numeric', 
                               minute: '2-digit',
                               hour12: true 
                             })}
                           </span>
                         </div>
-                        <p className="text-xs sm:text-sm text-gray-600 mt-1">{meal.description}</p>
+                        <p className="text-xs sm:text-sm text-gray-600 mt-1">{meal.mealDescription}</p>
                       </div>
-                      <div className="text-left sm:text-right">
-                        <div className="font-medium text-sm sm:text-base text-green-600">{meal.macros.calories} cal</div>
-                        <div className="text-xs sm:text-sm text-gray-600">
-                          P: {meal.macros.protein}g | C: {meal.macros.carbs}g | F: {meal.macros.fats}g
+                      <div className="flex items-center gap-2">
+                        <div className="text-left sm:text-right">
+                          <div className="font-medium text-sm sm:text-base text-green-600">{meal.calories} cal</div>
+                          <div className="text-xs sm:text-sm text-gray-600">
+                            P: {meal.proteins}g | C: {meal.carbs}g | F: {meal.fats}g
+                          </div>
                         </div>
+                        {userId && (
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => handleDeleteMeal(meal.mealId)}
+                            className="text-gray-500 hover:text-red-600 hover:bg-red-50 h-8 w-8 p-0"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        )}
                       </div>
                     </div>
                   ))}

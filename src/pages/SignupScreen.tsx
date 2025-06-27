@@ -6,6 +6,7 @@ import { Label } from '../components/ui/label';
 import { ArrowLeft, UserPlus, Eye, EyeOff, Leaf, Apple, Target, Zap } from 'lucide-react';
 import { ImageWithFallback } from '../components/figma/ImageWithFallback';
 import axios from 'axios';
+import { v4 as uuidv4 } from 'uuid';
 interface SignupScreenProps {
   onBackToLogin: () => void;
   onBackToWelcome: () => void;
@@ -18,7 +19,8 @@ export function SignupScreen({ onBackToLogin, onBackToWelcome }: SignupScreenPro
     isFirstTimeUser: 'true',
     hasSetTargets: 'false',
     password: '',
-    confirmPassword: ''
+    confirmPassword: '',
+    userId: uuidv4()
   });
   const [errMessage, setErrMessage] = useState("");
   const [showPassword, setShowPassword] = useState(false);

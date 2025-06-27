@@ -6,8 +6,9 @@ import { SignupScreen } from './pages/SignupScreen';
 import { Dashboard } from './pages/Dashboard';
 import { MacroTargets as MacroTargetsComponent } from './pages/MacroTargets';
 import { MealLogging } from './pages/MealLogging';
-import type { Screen, MacroTargets, Meal } from './types';
-import { calculateMacroTotals } from './utils';
+import type { Screen, MacroTargets, Meal, Params } from './types';
+import { v4 as uuidv4 } from 'uuid';
+//import { calculateMacroTotals } from './utils';
 
 export default function App() {
   const [currentScreen, setCurrentScreen] = useState<Screen>('welcome');
@@ -38,6 +39,7 @@ export default function App() {
   }, [isFirstTimeUser]);
   const [userEmail, setUserEmail] = useState('');
   const [userName, setUserName] = useState('');
+  const [userId, setUserId] = useState('');
   const [macroTargets, setMacroTargets] = useState<MacroTargets>({
     calories: 2000,
     protein: 150,
@@ -45,18 +47,19 @@ export default function App() {
     fats: 65
   });
   const [meals, setMeals] = useState<Meal[]>([]);
+  const [navigationParams, setNavigationParams] = useState<Params | null>(null);
 
-  const addMeal = (meal: Omit<Meal, 'id' | 'timestamp'>) => {
+  const addMeal = (meal: Omit<Meal, 'id'> & { timestamp?: Date }) => {
     const newMeal: Meal = {
       ...meal,
-      id: Date.now().toString(),
-      timestamp: new Date()
+      mealId: uuidv4(),
+      mealDate: meal.timestamp ? new Date(meal.timestamp).toISOString() : new Date().toISOString()
     };
     setMeals(prev => [...prev, newMeal]);
   };
 
   const deleteMeal = (mealId: string) => {
-    setMeals(prev => prev.filter(meal => meal.id !== mealId));
+    setMeals(prev => prev.filter(meal => meal.mealId !== mealId));
   };
 
   const saveTargets = async (targets: MacroTargets) => {
@@ -108,6 +111,15 @@ export default function App() {
     }
   };
 
+  const handleNavigate = (screen: Screen, params?: Params) => {
+    setCurrentScreen(screen);
+    if (params) {
+      setNavigationParams(params);
+    } else {
+      setNavigationParams(null);
+    }
+  };
+
   const handleFirstMealComplete = () => {
     setIsFirstTimeUser(false);
     setCurrentScreen('dashboard');
@@ -122,7 +134,7 @@ export default function App() {
     setCurrentScreen('welcome');
   };
 
-  const currentMacros = calculateMacroTotals(meals);
+  //const currentMacros = calculateMacroTotals(meals);
 
   const renderScreen = () => {
     // console.log('currentScreen in App.tsx:', currentScreen);
@@ -172,12 +184,12 @@ export default function App() {
         return (
           <Dashboard
             targets={macroTargets}
-            current={currentMacros}
             meals={meals}
-            onNavigate={setCurrentScreen}
+            onNavigate={handleNavigate}
             onLogout={handleLogout}
             userEmail={userEmail}
             userName={userName}
+            userId={userId}
           />
         );
       case 'targets':
@@ -191,13 +203,15 @@ export default function App() {
         );
       case 'meals':
         return (
-          <MealLogging
+          <MealLogging 
             meals={meals}
             onAddMeal={addMeal}
             onDeleteMeal={deleteMeal}
             onBack={() => setCurrentScreen('dashboard')}
             isFirstTime={isFirstTimeUser}
             onFirstMealComplete={handleFirstMealComplete}
+            initialDate={navigationParams?.initialDate}
+            userId={userId}
           />
         );
       default:
