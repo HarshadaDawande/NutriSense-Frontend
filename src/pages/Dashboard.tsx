@@ -3,11 +3,12 @@ import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card'
 import { Button } from '../components/ui/button';
 import { Progress } from '../components/ui/progress';
 import { PieChart, Pie, Cell, ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip } from 'recharts';
-import { Target, Plus, Clock, LogOut, Scale, User, Leaf, Apple, ChevronLeft, ChevronRight, Calendar, Trash2 } from 'lucide-react';
+import { Target, Plus, Clock, LogOut, Scale, User, Leaf, Apple, ChevronLeft, ChevronRight, Calendar as CalendarIcon, Trash2 } from 'lucide-react';
 import { ImageWithFallback } from '../components/figma/ImageWithFallback';
 import { toast } from 'sonner';
 import { useMealLogging } from '../hooks/useMealLogging';
 import type { MacroTargets, Meal, Screen, Params } from '../types';
+import { Calendar as CalendarComponent } from '../components/ui/calendar';
 
 interface DashboardProps {
   targets: MacroTargets;
@@ -21,6 +22,7 @@ interface DashboardProps {
 
 export function Dashboard({ targets, meals: initialMeals, onNavigate, onLogout, userEmail, userName, userId }: DashboardProps) {
   const [selectedDate, setSelectedDate] = useState(new Date());
+  const [showCalendar, setShowCalendar] = useState(false);
   
   // Use our custom hook for meal logging
   const { 
@@ -186,6 +188,13 @@ export function Dashboard({ targets, meals: initialMeals, onNavigate, onLogout, 
     onNavigate('meals', { initialDate: selectedDate });
   };
 
+  // const handleDateChange = (date: Date | undefined) => {
+  //   if (date) {
+  //     setSelectedDate(date);
+  //     setShowCalendar(false);
+  //   }
+  // };
+
   return (
     <div className="min-h-screen relative">
       {/* Background with overlay */}
@@ -253,7 +262,7 @@ export function Dashboard({ targets, meals: initialMeals, onNavigate, onLogout, 
           </div>
 
           {/* Date Navigation */}
-          <Card className="bg-white/70 backdrop-blur-sm border border-green-200 shadow-lg">
+          <Card className="relative z-30 bg-white/70 backdrop-blur-sm border border-green-200 shadow-lg">
             <CardContent className="p-4">
               <div className="flex items-center justify-between">
                 <Button
@@ -265,8 +274,14 @@ export function Dashboard({ targets, meals: initialMeals, onNavigate, onLogout, 
                   <ChevronLeft className="w-4 h-4" />
                 </Button>
                 
-                <div className="flex items-center gap-3">
-                  <Calendar className="w-5 h-5 text-green-600" />
+                <div className="relative flex items-center gap-3">
+                  <button
+                    type="button"
+                    onClick={() => setShowCalendar(!showCalendar)}
+                    className="text-green-600 hover:text-green-700"
+                  >
+                    <CalendarIcon className="w-5 h-5" />
+                  </button>
                   <div className="text-center">
                     <h2 className="text-lg font-bold text-gray-800">{formatDate(selectedDate)}</h2>
                     <p className="text-sm text-gray-600">
@@ -277,6 +292,50 @@ export function Dashboard({ targets, meals: initialMeals, onNavigate, onLogout, 
                       })}
                     </p>
                   </div>
+                  {showCalendar && (
+                    <div
+                      className="absolute top-full left-0 z-[999] mt-1 w-72 border border-green-200 rounded-md p-3 bg-white shadow-lg pointer-events-auto"
+                      onClick={(e) => e.stopPropagation()}
+                    >
+                      <div className="mb-3 flex justify-end">
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          className="text-xs border-green-200 text-green-700 hover:bg-green-50 hover:text-green-800"
+                          onClick={() => {
+                            const today = new Date();
+                            setSelectedDate(today);
+                            setShowCalendar(false);
+                          }}
+                        >
+                          Today
+                        </Button>
+                      </div>
+                      <CalendarComponent
+                        mode="single"
+                        selected={selectedDate}
+                        onSelect={(date) => {
+                          console.log('Day selected:', date);
+                          if (date) {
+                            setSelectedDate(date);
+                            setShowCalendar(false);
+                          }
+                        }}
+                        onDayClick={(day) => console.log('Day clicked:', day)}
+                        disabled={(date) => date > new Date()}
+                        className="mx-auto"
+                        classNames={{
+                          day_selected: "bg-green-600 text-white hover:bg-green-700 hover:text-white focus:bg-green-700 focus:text-white",
+                          day_today: "bg-green-50 text-green-800 font-medium",
+                          caption_label: "text-green-800 font-medium",
+                          nav_button: "text-green-600 hover:bg-green-50 hover:text-green-800",
+                          cell: "rounded-full",
+                          day: "rounded-full hover:bg-green-50 hover:text-green-800 focus:bg-green-50 focus:text-green-800"
+                        }}
+                      />
+                    </div>
+                  )}
                 </div>
 
                 <Button
