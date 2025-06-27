@@ -72,7 +72,7 @@ export function MacroTargets({ targets, onSave, onBack, isFirstTime = false }: M
     const numValue = parseInt(value) || 0;
     const newFormData = { ...formData, [field]: numValue };
     setFormData(newFormData);
-    
+
     // Check if the new values match any preset
     const matchingPreset = getMatchingPreset(newFormData);
     setSelectedPreset(matchingPreset);
@@ -119,8 +119,8 @@ export function MacroTargets({ targets, onSave, onBack, isFirstTime = false }: M
   ];
 
   const headerTitle = isFirstTime ? "Welcome! Let's Set Your Goals" : "Macro Targets";
-  const headerDescription = isFirstTime 
-    ? "First, let's establish your daily nutrition targets to help you stay balanced" 
+  const headerDescription = isFirstTime
+    ? "First, let's establish your daily nutrition targets to help you stay balanced"
     : "Set your daily nutrition goals";
 
   const buttonText = isFirstTime ? "Save & Start Tracking" : "Save Targets";
@@ -142,7 +142,7 @@ export function MacroTargets({ targets, onSave, onBack, isFirstTime = false }: M
     <div className="min-h-screen relative">
       {/* Background */}
       <div className="absolute inset-0 bg-gradient-to-br from-green-50 via-white to-green-100" />
-      
+
       {/* Background Images */}
       <div className="absolute top-10 right-10 w-40 h-40 opacity-8 hidden lg:block">
         <ImageWithFallback
@@ -158,7 +158,7 @@ export function MacroTargets({ targets, onSave, onBack, isFirstTime = false }: M
           className="w-full h-full object-cover rounded-full"
         />
       </div>
-      
+
       <div className="relative z-10 p-2 sm:p-4">
         <div className="max-w-2xl mx-auto space-y-4 sm:space-y-6">
           {/* Header */}
@@ -201,7 +201,7 @@ export function MacroTargets({ targets, onSave, onBack, isFirstTime = false }: M
                       Step 1: Set Your Macro Balance
                     </h3>
                     <p className="text-gray-700 text-sm leading-relaxed">
-                      These targets will help you maintain a balanced diet. Don't worry - you can always adjust them later 
+                      These targets will help you maintain a balanced diet. Don't worry - you can always adjust them later
                       as you learn more about your body's needs. We've set some reasonable defaults to get you started!
                     </p>
                   </div>
@@ -239,7 +239,7 @@ export function MacroTargets({ targets, onSave, onBack, isFirstTime = false }: M
                     <div className="font-medium text-sm text-red-600">Weight Loss</div>
                     <div className="text-xs text-gray-600">1500 cal deficit</div>
                   </Button>
-                  
+
                   <Button
                     type="button"
                     variant="outline"
@@ -258,7 +258,7 @@ export function MacroTargets({ targets, onSave, onBack, isFirstTime = false }: M
                     <div className="font-medium text-sm text-green-600">Maintenance</div>
                     <div className="text-xs text-gray-600">2000 cal balanced</div>
                   </Button>
-                  
+
                   <Button
                     type="button"
                     variant="outline"
@@ -299,8 +299,8 @@ export function MacroTargets({ targets, onSave, onBack, isFirstTime = false }: M
                   return (
                     <div key={macro.field} className="space-y-2 p-4 bg-green-50 rounded-lg border border-green-100">
                       <div className="flex items-center gap-2">
-                        <div 
-                          className="w-8 h-8 rounded-full flex items-center justify-center shadow-sm" 
+                        <div
+                          className="w-8 h-8 rounded-full flex items-center justify-center shadow-sm"
                           style={{ backgroundColor: `${macro.color}20` }}
                         >
                           <IconComponent className="w-4 h-4" style={{ color: macro.color }} />
@@ -341,8 +341,8 @@ export function MacroTargets({ targets, onSave, onBack, isFirstTime = false }: M
                     const IconComponent = macro.icon;
                     return (
                       <div key={macro.field} className="text-center p-3 bg-gray-50 rounded-lg border border-green-100 shadow-sm">
-                        <div 
-                          className="w-6 h-6 rounded-full mx-auto mb-2 flex items-center justify-center" 
+                        <div
+                          className="w-6 h-6 rounded-full mx-auto mb-2 flex items-center justify-center"
                           style={{ backgroundColor: `${macro.color}20` }}
                         >
                           <IconComponent className="w-3 h-3" style={{ color: macro.color }} />
