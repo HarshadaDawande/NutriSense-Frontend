@@ -4,7 +4,6 @@ import { ArrowLeft, ChefHat } from 'lucide-react';
 import { MealForm } from './MealForm';
 import { MacroAnalysis } from './MacroAnalysis';
 import { MealLibrary } from './MealLibrary';
-import { QuickAddMeals } from './QuickAddMeals';
 //import { DatePicker } from './DatePicker';
 import type { Meal, MealType } from '../../types';
 
@@ -53,12 +52,10 @@ export function RegularMealLogging({
   selectedMeal,
   meals,
   todaysMeals = [],
-  quickMeals,
   isTrackingEnabled,
   onMealChange,
   onAnalyzeMeal,
   onSelectSavedMeal,
-  onSelectExampleMeal,
   onDeleteMeal,
   onBack,
   onSubmit,
@@ -143,13 +140,6 @@ export function RegularMealLogging({
                   onSelectMeal={onSelectSavedMeal}
                   onDeleteMeal={onDeleteMeal}
                   selectedMeal={selectedMeal}
-                />
-
-                {/* Try These Examples - Bottom Half */}
-                <QuickAddMeals
-                  quickMeals={quickMeals}
-                  selectedMeal={selectedMeal}
-                  onSelectMeal={onSelectExampleMeal}
                 />
               </div>
             </div>

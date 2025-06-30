@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useRef } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
 import { Button } from '../components/ui/button';
 import { Progress } from '../components/ui/progress';
@@ -23,7 +24,31 @@ interface DashboardProps {
 export function Dashboard({ targets, meals: initialMeals, onNavigate, onLogout, userEmail, userName, userId }: DashboardProps) {
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [showCalendar, setShowCalendar] = useState(false);
-  
+  const [calendarMonth, setCalendarMonth] = useState<Date>(new Date());
+
+  // Ref for the calendar overlay to detect outside clicks if needed
+  const calendarRef = useRef<HTMLDivElement>(null);
+  const calendarToggleRef = useRef<HTMLButtonElement>(null);
+
+  // Close calendar when clicking anywhere outside
+  useEffect(() => {
+    if (!showCalendar) return;
+
+    const handleClick = (event: MouseEvent) => {
+      // If click happened inside calendar, ignore
+      if (
+        (calendarRef.current && calendarRef.current.contains(event.target as Node)) ||
+        (calendarToggleRef.current && calendarToggleRef.current.contains(event.target as Node))
+      ) {
+        return;
+      }
+      setShowCalendar(false);
+    };
+
+    window.addEventListener('click', handleClick);
+    return () => window.removeEventListener('click', handleClick);
+  }, [showCalendar]);
+
   // Use our custom hook for meal logging
   const { 
     meals, 
@@ -277,7 +302,12 @@ export function Dashboard({ targets, meals: initialMeals, onNavigate, onLogout, 
                 <div className="relative flex items-center gap-3">
                   <button
                     type="button"
-                    onClick={() => setShowCalendar(!showCalendar)}
+                    ref={calendarToggleRef}
+                    onClick={() => {
+                      // Ensure the calendar opens on the month of the currently selected date
+                      setCalendarMonth(selectedDate);
+                      setShowCalendar(!showCalendar);
+                    }}
                     className="text-green-600 hover:text-green-700"
                   >
                     <CalendarIcon className="w-5 h-5" />
@@ -294,10 +324,30 @@ export function Dashboard({ targets, meals: initialMeals, onNavigate, onLogout, 
                   </div>
                   {showCalendar && (
                     <div
-                      className="absolute top-full left-0 z-[999] mt-1 w-72 border border-green-200 rounded-md p-3 bg-white shadow-lg pointer-events-auto"
+                      id="div1"
+                      ref={calendarRef}
+                      className="absolute top-full left-0 z-[999] mt-1 w-fit border border-green-200 rounded-md p-3 bg-white shadow-lg pointer-events-auto"
                       onClick={(e) => e.stopPropagation()}
                     >
-                      <div className="mb-3 flex justify-end">
+                      <div className="mb-3 flex items-center justify-between gap-2">
+                        {/* Previous month */}
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          className="border-green-200 text-green-700 hover:bg-green-50 hover:text-green-800"
+                          onClick={() => {
+                            setCalendarMonth(prev => {
+                              const newDate = new Date(prev);
+                              newDate.setMonth(prev.getMonth() - 1);
+                              return newDate;
+                            });
+                          }}
+                        >
+                          <ChevronLeft className="w-4 h-4" />
+                        </Button>
+
+                        {/* Today */}
                         <Button
                           type="button"
                           variant="outline"
@@ -306,32 +356,57 @@ export function Dashboard({ targets, meals: initialMeals, onNavigate, onLogout, 
                           onClick={() => {
                             const today = new Date();
                             setSelectedDate(today);
-                            setShowCalendar(false);
+                            setCalendarMonth(today);
                           }}
                         >
                           Today
                         </Button>
+
+                        {/* Next month */}
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          className="border-green-200 text-green-700 hover:bg-green-50 hover:text-green-800"
+                          onClick={() => {
+                            setCalendarMonth(prev => {
+                              const newDate = new Date(prev);
+                              newDate.setMonth(prev.getMonth() + 1);
+                              return newDate;
+                            });
+                          }}
+                        >
+                          <ChevronRight className="w-4 h-4" />
+                        </Button>
                       </div>
                       <CalendarComponent
+                        month={calendarMonth}
+                        onMonthChange={setCalendarMonth}
                         mode="single"
                         selected={selectedDate}
                         onSelect={(date) => {
                           console.log('Day selected:', date);
                           if (date) {
                             setSelectedDate(date);
-                            setShowCalendar(false);
+                            setCalendarMonth(date);
+                            //setShowCalendar(false);
                           }
                         }}
                         onDayClick={(day) => console.log('Day clicked:', day)}
                         disabled={(date) => date > new Date()}
                         className="mx-auto"
                         classNames={{
+                          nav: "hidden", // hide default navigation controls
                           day_selected: "bg-green-600 text-white hover:bg-green-700 hover:text-white focus:bg-green-700 focus:text-white",
                           day_today: "bg-green-50 text-green-800 font-medium",
                           caption_label: "text-green-800 font-medium",
                           nav_button: "text-green-600 hover:bg-green-50 hover:text-green-800",
                           cell: "rounded-full",
                           day: "rounded-full hover:bg-green-50 hover:text-green-800 focus:bg-green-50 focus:text-green-800"
+                        }}
+                        components={{
+                          // remove default navbar completely
+                          //Navbar: () => null,
                         }}
                       />
                     </div>
