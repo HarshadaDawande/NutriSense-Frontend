@@ -1,9 +1,9 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/card';
 import { Button } from '../../components/ui/button';
 import { Input } from '../../components/ui/input';
 import { Badge } from '../../components/ui/badge';
-import { BookOpen, Search, Check, Trash2, Clock } from 'lucide-react';
+import { BookOpen, Search, Check, Trash2, Clock, ChevronLeft, ChevronRight } from 'lucide-react';
 import type { Meal, MealType } from '../../types';
 import { getMealTypeIcon, getMealTypeColor, mealTypeFilters } from './MealTypeUtils';
 import { deleteMeal } from '../../services/api';
@@ -25,6 +25,11 @@ export function MealLibrary({ meals, todaysMeals = [], onSelectMeal, onDeleteMea
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedMealTypeFilter, setSelectedMealTypeFilter] = useState<MealType | 'all'>('all');
 
+  /* ---------- Pagination ---------- */
+  const PAGE_SIZE = 5;
+  const [todayPage, setTodayPage] = useState(1);   // 1-based page index
+  const [prevPage, setPrevPage] = useState(1);
+
   // Filter and search saved meals (excluding today's meals to avoid duplication)
   const filteredMeals = meals
     .filter(meal => {
@@ -45,6 +50,22 @@ export function MealLibrary({ meals, todaysMeals = [], onSelectMeal, onDeleteMea
     const matchesType = selectedMealTypeFilter === 'all' || meal.mealType === selectedMealTypeFilter;
     return matchesSearch && matchesType;
   });
+
+  // Reset page indices when filters/search change so users start from first page
+  useEffect(() => {
+    setTodayPage(1);
+    setPrevPage(1);
+  }, [searchQuery, selectedMealTypeFilter]);
+
+  // Total meals shown after filtering (today + previous)
+  const totalFilteredMeals = filteredTodaysMeals.length + filteredMeals.length;
+
+  // Paginated slices
+  const paginatedTodaysMeals = filteredTodaysMeals.slice((todayPage - 1) * PAGE_SIZE, todayPage * PAGE_SIZE);
+  const paginatedPrevMeals  = filteredMeals.slice((prevPage - 1) * PAGE_SIZE, prevPage * PAGE_SIZE);
+
+  const totalTodayPages = Math.max(1, Math.ceil(filteredTodaysMeals.length / PAGE_SIZE));
+  const totalPrevPages  = Math.max(1, Math.ceil(filteredMeals.length / PAGE_SIZE));
 
   const handleDeleteMeal = async (mealId: string, event: React.MouseEvent) => {
     event.stopPropagation();
@@ -128,7 +149,7 @@ export function MealLibrary({ meals, todaysMeals = [], onSelectMeal, onDeleteMea
       <CardHeader className="flex-shrink-0 pb-2">
         <CardTitle className="text-base flex items-center gap-2">
           <BookOpen className="w-4 h-4 text-green-600" />
-          Your Meal Library ({meals.length})
+          Your Meal Library ({totalFilteredMeals})
         </CardTitle>
       </CardHeader>
       <CardContent className="flex-1 flex flex-col space-y-3 overflow-hidden min-h-0">
@@ -190,9 +211,21 @@ export function MealLibrary({ meals, todaysMeals = [], onSelectMeal, onDeleteMea
                     <h3 className="text-xs font-medium text-green-700">Today's Meals ({filteredTodaysMeals.length})</h3>
                   </div>
                   <div className="space-y-2">
-                    {filteredTodaysMeals
+                    {paginatedTodaysMeals
                       .sort((a, b) => new Date(b.mealDate).getTime() - new Date(a.mealDate).getTime())
                       .map(meal => renderMealCard(meal, true))}
+                    
+                    {totalTodayPages > 1 && (
+                      <div className="flex justify-center items-center gap-2 pt-2 text-xs text-gray-700">
+                        <Button variant="ghost" size="sm" disabled={todayPage === 1} onClick={() => setTodayPage(p => Math.max(1, p - 1))} className="px-2">
+                          <ChevronLeft className="w-3 h-3" />
+                        </Button>
+                        <span>Page {todayPage} / {totalTodayPages}</span>
+                        <Button variant="ghost" size="sm" disabled={todayPage === totalTodayPages} onClick={() => setTodayPage(p => Math.min(totalTodayPages, p + 1))} className="px-2">
+                          <ChevronRight className="w-3 h-3" />
+                        </Button>
+                      </div>
+                    )}
                   </div>
                 </div>
               )}
@@ -207,9 +240,21 @@ export function MealLibrary({ meals, todaysMeals = [], onSelectMeal, onDeleteMea
                     </div>
                   )}
                   <div className="space-y-2">
-                    {filteredMeals
+                    {paginatedPrevMeals
                       .sort((a, b) => new Date(b.mealDate).getTime() - new Date(a.mealDate).getTime())
                       .map(meal => renderMealCard(meal))}
+                    
+                    {totalPrevPages > 1 && (
+                      <div className="flex justify-center items-center gap-2 pt-2 text-xs text-gray-700">
+                        <Button variant="ghost" size="sm" disabled={prevPage === 1} onClick={() => setPrevPage(p => Math.max(1, p - 1))} className="px-2">
+                          <ChevronLeft className="w-3 h-3" />
+                        </Button>
+                        <span>Page {prevPage} / {totalPrevPages}</span>
+                        <Button variant="ghost" size="sm" disabled={prevPage === totalPrevPages} onClick={() => setPrevPage(p => Math.min(totalPrevPages, p + 1))} className="px-2">
+                          <ChevronRight className="w-3 h-3" />
+                        </Button>
+                      </div>
+                    )}
                   </div>
                 </div>
               )}
