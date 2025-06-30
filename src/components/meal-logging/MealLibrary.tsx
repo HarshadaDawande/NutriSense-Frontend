@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/card';
 import { Button } from '../../components/ui/button';
 import { Input } from '../../components/ui/input';
@@ -25,16 +25,31 @@ export function MealLibrary({ meals, todaysMeals = [], onSelectMeal, onDeleteMea
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedMealTypeFilter, setSelectedMealTypeFilter] = useState<MealType | 'all'>('all');
 
+  // Helper to deduplicate meals by composite key
+  const deduplicateMeals = (arr: Meal[]) => {
+    const seen = new Set<string>();
+    return arr.filter(m => {
+      const key = `${m.mealName.toLowerCase()}|${m.mealDescription.toLowerCase()}|${m.mealType}`;
+      if (seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    });
+  };
+
+  // Memoized unique arrays
+  const uniqueMeals = useMemo(() => deduplicateMeals(meals), [meals]);
+  const uniqueTodaysMeals = useMemo(() => deduplicateMeals(todaysMeals), [todaysMeals]);
+
   /* ---------- Pagination ---------- */
   const PAGE_SIZE = 5;
   const [todayPage, setTodayPage] = useState(1);   // 1-based page index
   const [prevPage, setPrevPage] = useState(1);
 
   // Filter and search saved meals (excluding today's meals to avoid duplication)
-  const filteredMeals = meals
+  const filteredMeals = uniqueMeals
     .filter(meal => {
       // Exclude meals that are in todaysMeals to avoid duplication
-      const isInTodaysMeals = todaysMeals.some(todayMeal => todayMeal.mealId === meal.mealId);
+      const isInTodaysMeals = uniqueTodaysMeals.some(todayMeal => todayMeal.mealName.toLowerCase() === meal.mealName.toLowerCase() && todayMeal.mealDescription.toLowerCase() === meal.mealDescription.toLowerCase() && todayMeal.mealType === meal.mealType);
       
       const matchesSearch = meal.mealName.toLowerCase().includes(searchQuery.toLowerCase()) ||
                           meal.mealDescription.toLowerCase().includes(searchQuery.toLowerCase());
@@ -43,8 +58,8 @@ export function MealLibrary({ meals, todaysMeals = [], onSelectMeal, onDeleteMea
       return !isInTodaysMeals && matchesSearch && matchesType;
     });
 
-  // Filter today's meals based on search and type filter
-  const filteredTodaysMeals = todaysMeals.filter(meal => {
+  // Filter today's meals based on search and type filter (deduplicated list)
+  const filteredTodaysMeals = uniqueTodaysMeals.filter(meal => {
     const matchesSearch = meal.mealName.toLowerCase().includes(searchQuery.toLowerCase()) ||
                         meal.mealDescription.toLowerCase().includes(searchQuery.toLowerCase());
     const matchesType = selectedMealTypeFilter === 'all' || meal.mealType === selectedMealTypeFilter;
