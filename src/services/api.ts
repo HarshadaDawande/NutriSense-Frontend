@@ -103,3 +103,38 @@ export const analyzeMealDescription = async (description: string) => {
     throw error;
   }
 };
+
+/**
+ * Calculate macros for a meal description using the LLM-powered endpoint.
+ * This sends the meal description to the `/v1/llm/openrouter` endpoint and
+ * returns the calculated macronutrients.
+ */
+export const calculateMacros = async (mealDescription: string) => {
+  try {
+    const payload = {
+      model: 'deepseek/deepseek-chat:free',
+      messages: [
+        {
+          role: 'system',
+          content:
+            'You are a nutrition expert. You are able to determine the nutritional breakdown of recipes provided to you with ease. You are going to be provided with a recipe that will be denoted by + characters, where the first + character will denote the start of the recipe, and the final + character will denote the end of the recipe. This recipe will contain ingredients with mismatched units (i.e. cups, grams, mililitres), and occasionally references terms like \'portions\'. Your job, as a nutrition expert, is to first convert all the measurements to the same unit (for example grams), and then to make your BEST approximation at the nutritional breakdown of each ingredient. Obtain the macros for the provided recipe, in terms of Protein, Carbs, Fats, and Calories. Where available, use the official nutritional information based on the brand provided.'
+        },
+        {
+          role: 'system',
+          content:
+            'Your result should be formatted such that all the macros are summed together. That is, each macro has been added and only the total for each is provided. Additionally, they should be provided in json format. DO NOT PRINT YOUR REASONING. ONLY RETURN THE FINAL JSON RESULT. DO NOT PREFIX WITH \'json\'!'
+        },
+        {
+          role: 'user',
+          content: mealDescription
+        }
+      ]
+    };
+    console.log('Sending payload to API:', payload);
+    const response = await axios.post('http://localhost:8080/v1/llm/openrouter', payload);
+    console.log(response.data);
+    return response.data;
+  } catch (error) {
+    throw error;
+  }
+};

@@ -3,7 +3,7 @@ import { Beef, Coffee, Utensils } from 'lucide-react';
 import { toast } from 'sonner';
 import type { Meal, MealType } from '../types';
 import { RegularMealLogging } from '../components/meal-logging/RegularMealLogging';
-import { createMeal } from '../services/api';
+import { createMeal, calculateMacros } from '../services/api';
 import { v4 as uuidv4 } from 'uuid';
 import { useMealLogging } from '../hooks/useMealLogging';
 
@@ -119,26 +119,30 @@ export function MealLogging({ onAddMeal, onDeleteMeal, onBack, isFirstTime = fal
     setSelectedMeal(prev => ({ ...prev, isAnalyzing: true }));
     
     try {
-      // Call the backend API to analyze the meal description
-      //const result = await analyzeMealDescription(selectedMeal.mealDescription);
-      
-      // Calculate macro values
-      const calculatedMacros = {
-        calories: 370,
-        protein: 20,
-        carbs: 30,
-        fats: 15
+      // Call the backend API to analyze the meal description and calculate macros using LLM
+      const calculatedMacros = await calculateMacros(selectedMeal.mealDescription);
+      console.log('calculatedMacros in Analyse meal:',calculatedMacros);
+      // Normalise keys in case the model returns capitalised property names
+      const proteinVal = calculatedMacros.protein ?? calculatedMacros.Protein ?? 0;
+      const carbsVal = calculatedMacros.carbs ?? calculatedMacros.Carbs ?? 0;
+      const fatsVal = calculatedMacros.fats ?? calculatedMacros.Fats ?? 0;
+      const caloriesVal = calculatedMacros.calories ?? calculatedMacros.Calories ?? 0;
+
+      const normalizedMacros = {
+        calories: caloriesVal,
+        protein: proteinVal,
+        carbs: carbsVal,
+        fats: fatsVal
       };
       
       // Update the meal with the analyzed macros
       setSelectedMeal(prev => ({
         ...prev,
-        // Set both the macros object and individual properties
-        macros: calculatedMacros,
-        proteins: calculatedMacros.protein.toString(),
-        carbs: calculatedMacros.carbs.toString(),
-        fats: calculatedMacros.fats.toString(),
-        calories: calculatedMacros.calories.toString(),
+        macros: normalizedMacros,
+        proteins: proteinVal.toString(),
+        carbs: carbsVal.toString(),
+        fats: fatsVal.toString(),
+        calories: caloriesVal.toString(),
         // Set the meal date to the selected date if it's not already set
         mealDate: prev.mealDate || selectedDate.toISOString(),
         userId: userId || '',
