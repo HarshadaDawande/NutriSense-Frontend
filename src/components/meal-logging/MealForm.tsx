@@ -30,7 +30,7 @@ export function MealForm({
   onAnalyzeMeal
 }: MealFormProps) {
   return (
-    <Card className="bg-white/80 backdrop-blur-sm border border-green-200 shadow-lg flex-1 flex flex-col min-h-0">
+    <Card className="bg-white/80 backdrop-blur-sm border border-green-200 shadow-lg h-[600px] flex flex-col overflow-y-auto">
       <CardHeader className="flex-shrink-0 pb-3">
         <CardTitle className="flex items-center gap-2 text-base">
           <div className="w-5 h-5 bg-green-500 rounded-full flex items-center justify-center">
@@ -46,7 +46,7 @@ export function MealForm({
           )}
         </CardTitle>
       </CardHeader>
-      <CardContent className="flex-1 flex flex-col space-y-3 overflow-y-auto min-h-0">
+      <CardContent className="flex-1 flex flex-col space-y-3 overflow-y-auto">
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <div className="space-y-1">
             <Label htmlFor="meal-name" className="text-sm text-gray-700">Meal Name</Label>
