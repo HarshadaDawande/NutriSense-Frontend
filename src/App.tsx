@@ -8,7 +8,7 @@ import { MacroTargets as MacroTargetsComponent } from './pages/MacroTargets';
 import { MealLogging } from './pages/MealLogging';
 import type { Screen, MacroTargets, Meal, Params } from './types';
 import { v4 as uuidv4 } from 'uuid';
-//import { calculateMacroTotals } from './utils';
+import { getMacroTargets } from './services/api';
 
 export default function App() {
   const [currentScreen, setCurrentScreen] = useState<Screen>('welcome');
@@ -46,6 +46,21 @@ export default function App() {
     carbs: 200,
     fats: 65
   });
+
+  // Fetch saved macro targets whenever we have a userId
+  useEffect(() => {
+    if (!userId) return;
+
+    (async () => {
+      try {
+        const targets = await getMacroTargets(userName);
+        setMacroTargets(targets);
+      } catch (error) {
+        console.error('Failed to fetch macro targets', error);
+      }
+    })();
+  }, []);
+
   const [meals, setMeals] = useState<Meal[]>([]);
   const [navigationParams, setNavigationParams] = useState<Params | null>(null);
 

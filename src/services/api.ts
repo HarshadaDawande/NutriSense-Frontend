@@ -138,3 +138,26 @@ export const calculateMacros = async (mealDescription: string) => {
     throw error;
   }
 };
+
+// ------------------------------
+// Macro-targets related API calls
+// ------------------------------
+
+import type { MacroTargets } from '../types';
+
+/**
+ * Get the saved macro targets for a user.
+ * The backend is expected to expose GET /v1/targets/:userId which returns
+ * an object matching the `MacroTargets` interface.
+ */
+export const getMacroTargets = async (userId: string): Promise<MacroTargets> => {
+  try {
+    const response = await apiClient.get(`/meal/${userId}/targets`);
+    return response.data as MacroTargets;
+  } catch (error) {
+    if (axios.isAxiosError(error) && error.response) {
+      console.error(`Error fetching targets: ${error.response.status}`);
+    }
+    throw error;
+  }
+};

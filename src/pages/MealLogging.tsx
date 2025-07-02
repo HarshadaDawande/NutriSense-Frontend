@@ -123,10 +123,11 @@ export function MealLogging({ onAddMeal, onDeleteMeal, onBack, isFirstTime = fal
       const calculatedMacros = await calculateMacros(selectedMeal.mealDescription);
       console.log('calculatedMacros in Analyse meal:',calculatedMacros);
       // Normalise keys in case the model returns capitalised property names
-      const proteinVal = calculatedMacros.protein ?? calculatedMacros.Protein ?? 0;
-      const carbsVal = calculatedMacros.carbs ?? calculatedMacros.Carbs ?? 0;
-      const fatsVal = calculatedMacros.fats ?? calculatedMacros.Fats ?? 0;
-      const caloriesVal = calculatedMacros.calories ?? calculatedMacros.Calories ?? 0;
+      const macros = JSON.parse(calculatedMacros.content)
+      const proteinVal = macros.Protein ?? 0;
+      const carbsVal = macros.Carbs ?? 0;
+      const fatsVal = macros.Fats ?? 0;
+      const caloriesVal = macros.Calories ?? 0;
 
       const normalizedMacros = {
         calories: caloriesVal,
