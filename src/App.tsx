@@ -47,19 +47,43 @@ export default function App() {
     fats: 65
   });
 
-  // Fetch saved macro targets whenever we have a userId
+  // Fetch saved macro targets from DB whenever userName changes
   useEffect(() => {
-    if (!userId) return;
+    if (!userName) return;
 
     (async () => {
       try {
-        const targets = await getMacroTargets(userName);
-        setMacroTargets(targets);
+        // Fetch from backend using userName
+        const rawTargets = await getMacroTargets(userName);
+
+        // Ensure values are numeric (backend may send strings)
+        const normalizedTargets: MacroTargets = {
+          calories: Number(rawTargets.calories) || 0,
+          protein: Number(rawTargets.protein) || 0,
+          carbs: Number(rawTargets.carbs) || 0,
+          fats: Number(rawTargets.fats) || 0
+        };
+
+        // Update state
+        setMacroTargets(normalizedTargets);
+        setHasSetTargets(true);
+
+        // Persist targets in localStorage so they are available on next load
+        const userDataStr = localStorage.getItem('userData');
+        if (userDataStr) {
+          const parsed = JSON.parse(userDataStr);
+          parsed.calories = normalizedTargets.calories;
+          parsed.protein = normalizedTargets.protein;
+          parsed.carbs = normalizedTargets.carbs;
+          parsed.fats = normalizedTargets.fats;
+          parsed.hasSetTargets = true;
+          localStorage.setItem('userData', JSON.stringify(parsed));
+        }
       } catch (error) {
         console.error('Failed to fetch macro targets', error);
       }
     })();
-  }, []);
+  }, [userName]);
 
   const [meals, setMeals] = useState<Meal[]>([]);
   const [navigationParams, setNavigationParams] = useState<Params | null>(null);
@@ -196,6 +220,15 @@ export default function App() {
             onBackToWelcome={() => setCurrentScreen('welcome')}
           />
         );
+      case 'targets':
+        return (
+          <MacroTargetsComponent
+            targets={macroTargets}
+            onSave={handleTargetsSave}
+            onBack={() => setCurrentScreen('dashboard')}
+            isFirstTime={isFirstTimeUser && !hasSetTargets}
+          />
+        );
       case 'dashboard':
         return (
           <Dashboard
@@ -206,15 +239,6 @@ export default function App() {
             userEmail={userEmail}
             userName={userName}
             userId={userId}
-          />
-        );
-      case 'targets':
-        return (
-          <MacroTargetsComponent
-            targets={macroTargets}
-            onSave={handleTargetsSave}
-            onBack={() => setCurrentScreen('dashboard')}
-            isFirstTime={isFirstTimeUser && !hasSetTargets}
           />
         );
       case 'meals':

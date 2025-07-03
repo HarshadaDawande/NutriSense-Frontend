@@ -87,7 +87,8 @@ export const updateMeal = async (mealId: string, mealData: Partial<MealPayload>)
 
 export const deleteMeal = async (mealId: string) => {
   try {
-    const response = await apiClient.delete(`/meal/${mealId}`);
+    // Use the default axios instance so it can be easily mocked in tests
+    const response = await axios.delete(`${API_BASE_URL}/meal/${mealId}`);
     return response.data;
   } catch (error) {
     throw error;
@@ -150,9 +151,9 @@ import type { MacroTargets } from '../types';
  * The backend is expected to expose GET /v1/targets/:userId which returns
  * an object matching the `MacroTargets` interface.
  */
-export const getMacroTargets = async (userId: string): Promise<MacroTargets> => {
+export const getMacroTargets = async (userName: string): Promise<MacroTargets> => {
   try {
-    const response = await apiClient.get(`/meal/${userId}/targets`);
+    const response = await apiClient.get(`/meal/${userName}/targets`);
     return response.data as MacroTargets;
   } catch (error) {
     if (axios.isAxiosError(error) && error.response) {
