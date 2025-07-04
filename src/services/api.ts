@@ -154,8 +154,22 @@ import type { MacroTargets } from '../types';
 export const getMacroTargets = async (userName: string): Promise<MacroTargets> => {
   try {
     const response = await apiClient.get(`/meal/${userName}/targets`);
+
+    // If backend indicates no targets, return zeros so UI can show defaults
+    if (response.data && typeof response.data === 'object' && 'message' in response.data) {
+      const msg = (response.data as any).message?.toLowerCase?.() ?? '';
+      if (msg.includes('targets not found')) {
+        return { calories: -1, protein: -1, carbs: -1, fats: -1 };
+      }
+    }
+
     return response.data as MacroTargets;
   } catch (error) {
+    // If 404, treat as no targets
+    if (axios.isAxiosError(error) && error.response?.status === 404) {
+      return { calories: -1, protein: -1, carbs: -1, fats: -1 };
+    }
+
     if (axios.isAxiosError(error) && error.response) {
       console.error(`Error fetching targets: ${error.response.status}`);
     }

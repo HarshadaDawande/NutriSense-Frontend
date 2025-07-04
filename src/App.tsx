@@ -10,14 +10,21 @@ import type { Screen, MacroTargets, Meal, Params } from './types';
 import { v4 as uuidv4 } from 'uuid';
 import { getMacroTargets } from './services/api';
 
+// Helper to convert string or boolean to real boolean
+const toBool = (v: unknown): boolean => v === true || v === 'true';
+
 export default function App() {
   const [currentScreen, setCurrentScreen] = useState<Screen>('welcome');
   const userData = localStorage.getItem('userData');
   const [isFirstTimeUser, setIsFirstTimeUser] = useState(() => {
-    return userData ? JSON.parse(userData).isFirstTimeUser : true;
+    if (!userData) return true;
+    const parsed = JSON.parse(userData);
+    return !toBool(parsed.hasSetTargets);
   });
   const [hasSetTargets, setHasSetTargets] = useState(() => {
-    return userData ? JSON.parse(userData).hasSetTargets : false;
+    if (!userData) return false;
+    const parsed = JSON.parse(userData);
+    return toBool(parsed.hasSetTargets);
   });
 
   // Save hasSetTargets to userData object in localStorage whenever it changes
@@ -56,6 +63,9 @@ export default function App() {
         // Fetch from backend using userName
         const rawTargets = await getMacroTargets(userName);
 
+        // Check if targets are initialized
+        if (rawTargets.calories != -1) {
+
         // Ensure values are numeric (backend may send strings)
         const normalizedTargets: MacroTargets = {
           calories: Number(rawTargets.calories) || 0,
@@ -67,15 +77,16 @@ export default function App() {
         // Update state
         setMacroTargets(normalizedTargets);
         setHasSetTargets(true);
+      }
 
         // Persist targets in localStorage so they are available on next load
         const userDataStr = localStorage.getItem('userData');
         if (userDataStr) {
           const parsed = JSON.parse(userDataStr);
-          parsed.calories = normalizedTargets.calories;
-          parsed.protein = normalizedTargets.protein;
-          parsed.carbs = normalizedTargets.carbs;
-          parsed.fats = normalizedTargets.fats;
+          parsed.calories = macroTargets.calories;
+          parsed.protein = macroTargets.protein;
+          parsed.carbs = macroTargets.carbs;
+          parsed.fats = macroTargets.fats;
           parsed.hasSetTargets = true;
           localStorage.setItem('userData', JSON.stringify(parsed));
         }
@@ -165,11 +176,20 @@ export default function App() {
   };
 
   const handleLogout = () => {
+    // Remove persisted data
     localStorage.removeItem('userData');
+
+    // Reset all in-memory state
     setUserEmail('');
+    setUserName('');
+    setUserId('');
     setIsFirstTimeUser(true);
     setHasSetTargets(false);
+    setMacroTargets({ calories: 0, protein: 0, carbs: 0, fats: 0 });
     setMeals([]);
+    setNavigationParams(null);
+
+    // Navigate to welcome
     setCurrentScreen('welcome');
   };
 
@@ -192,21 +212,21 @@ export default function App() {
         return (
           <LoginScreen
             onLogin={(_, __) => {
-              // Check if user data is stored in localStorage
               const userDataStr = localStorage.getItem('userData');
-              if (userDataStr) {
-                try {
-                  const userData = JSON.parse(userDataStr);
-                  setUserEmail(userData.emailAddress);
-                  setUserName(userData.userName);
-                  setUserId(userData.userId);
-                  setIsFirstTimeUser(userData.isFirstTimeUser === 'true');
-                  setHasSetTargets(userData.hasSetTargets === 'true');
-                  (isFirstTimeUser) ?
-                      setCurrentScreen('targets') : setCurrentScreen('dashboard');
-                } catch (error) {
-                  console.error('Error parsing user data from localStorage:', error);
-                }
+              if (!userDataStr) return;
+
+              try {
+                const userData = JSON.parse(userDataStr);
+                setUserEmail(userData.emailAddress);
+                setUserName(userData.userName);
+                setUserId(userData.userId);
+                const hasTargets = toBool(userData.hasSetTargets);
+                setIsFirstTimeUser(!hasTargets);
+                setHasSetTargets(hasTargets);
+
+                setCurrentScreen(hasTargets ? 'dashboard' : 'targets');
+              } catch (err) {
+                console.error('Failed to parse userData', err);
               }
             }}
             onBack={() => setCurrentScreen('welcome')}

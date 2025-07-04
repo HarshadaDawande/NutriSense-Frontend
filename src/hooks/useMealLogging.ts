@@ -71,8 +71,8 @@ export function useMealLogging({ userId }: UseMealLoggingProps) {
     try {
       await deleteMeal(mealId);
       
-      // Update local state
-      //setMeals(prev => prev.filter(meal => meal.id !== mealId));
+      // Update local state locally to keep UI in sync
+      setMeals(prev => prev.filter(meal => meal.mealId !== mealId));
       
       toast.success('Meal deleted successfully');
       return true;
